@@ -224,7 +224,7 @@
     <div class="sidebar-label">Ekipler</div>
     <div class="nav-item" onclick="goTo('satis')">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linejoin="round"/></svg>
-      Satış & Saha
+      Satış & Eğitim
     </div>
     <div class="nav-item" onclick="goTo('cagri')">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" stroke-width="1.5"/></svg>
@@ -236,7 +236,7 @@
     </div>
     <div class="nav-item" onclick="goTo('ik')">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="1.5"/></svg>
-      İK & Teknik
+      IT
     </div>
     <div class="nav-item" onclick="goTo('finans')">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="1.5"/></svg>
@@ -249,6 +249,10 @@
     <div class="nav-item" onclick="goTo('dijital')">
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Dijital Büyüme
+    </div>
+    <div class="nav-item" onclick="goTo('pazarlama')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" stroke-width="1.5"/></svg>
+      Pazarlama İçerik
     </div>
 
     <div class="sidebar-label">Ayarlar</div>
@@ -273,8 +277,8 @@
     <!-- SATIŞ -->
     <div class="page" id="page-satis">
       <div class="page-header">
-        <div class="page-title">Satış & Saha</div>
-        <div class="page-desc">SAS, TES, SAD, MOS metrikleri</div>
+        <div class="page-title">Satış & Eğitim</div>
+        <div class="page-desc">SAS, TES, SAD, MOS metrikleri + BURHAN EFE eğitim metrikleri</div>
       </div>
       <div id="satis-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
     </div>
@@ -300,8 +304,8 @@
     <!-- İK -->
     <div class="page" id="page-ik">
       <div class="page-header">
-        <div class="page-title">İK & Teknik</div>
-        <div class="page-desc">BAŞAK GÜL, DİLEK BIÇAKCI metrikleri</div>
+        <div class="page-title">IT</div>
+        <div class="page-desc">ALİ SAADAT · DİLEK BIÇAKCI · Teknik & Ürün metrikleri</div>
       </div>
       <div id="ik-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
     </div>
@@ -331,6 +335,15 @@
         <div class="page-desc">UMUT SEYARCI · Lead, conversion & proje metrikleri</div>
       </div>
       <div id="dijital-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- PAZARLAMAİÇERİK -->
+    <div class="page" id="page-pazarlama">
+      <div class="page-header">
+        <div class="page-title">Pazarlama İçerik</div>
+        <div class="page-desc">AYCAN ALPARSLAN · BÜRDE ÖZÇAKIR · Sosyal medya & içerik metrikleri</div>
+      </div>
+      <div id="pazarlama-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
     </div>
 
     <!-- AYARLAR -->
@@ -416,6 +429,22 @@ function parseNum(s) {
   const clean = String(s).replace(/[₺$%\s]/g, '').replace(/\./g, '').replace(',', '.');
   const n = parseFloat(clean);
   return isNaN(n) ? null : n;
+}
+
+// Yüzde değeri formatla — en fazla 2 ondalık hane, % işareti ekle
+function fmtPct(v) {
+  if (v === null || v === undefined) return '—';
+  // 0-1 arası ise 100 ile çarp
+  const val = (v > 0 && v <= 1) ? v * 100 : v;
+  const rounded = Math.round(val * 100) / 100;
+  return '%' + (Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2).replace(/\.?0+$/, ''));
+}
+
+// Ondalıklı sayıyı 2 haneye yuvarla
+function fmtNum(v, decimals = 2) {
+  if (v === null || v === undefined) return '—';
+  const rounded = Math.round(v * Math.pow(10, decimals)) / Math.pow(10, decimals);
+  return Number.isInteger(rounded) ? rounded.toLocaleString('tr') : rounded.toFixed(decimals).replace('.', ',');
 }
 
 // ─── RENDER HELPERS ──────────────────────────────────────
@@ -531,10 +560,10 @@ function renderGenel(rows) {
   document.getElementById('genel-content').innerHTML = `
     <div class="cards-grid">
       ${mkCard('TOTAL LEAD', lastLead ? lastLead.toLocaleString('tr') : '—', '30 Mar–5 Nis 2026', 'neutral')}
-      ${mkCard('CONVERSION RATE', lastConv ? lastConv.toFixed(1)+'%' : '—', convs.length>=2 ? (lastConv>convs[convs.length-2]?'↑ Artış':'↓ Düşüş') : '', lastConv && convs.length>=2 ? (lastConv>convs[convs.length-2]?'up':'down') : 'neutral')}
+      ${mkCard('CONVERSION RATE', lastConv ? fmtPct(lastConv) : '—', convs.length>=2 ? (lastConv>convs[convs.length-2]?'↑ Artış':'↓ Düşüş') : '', lastConv && convs.length>=2 ? (lastConv>convs[convs.length-2]?'up':'down') : 'neutral')}
       ${mkCard('LEAD PER COUPLE', h3 ? (() => { const v = getLastNonEmpty(h3); return v !== null ? v.toFixed(2) : '—'; })() : '—', '', 'neutral')}
       ${mkCard('TOPLAM FİRMA', lastFirma ? lastFirma.toLocaleString('tr') : '—', '6–12 Nis 2026', 'neutral')}
-      ${mkCard('YEŞİL FİRMA', lastYesil ? '%'+lastYesil.toFixed(1) : '—', '↑ Yükseliş trendi', 'up')}
+      ${mkCard('YEŞİL FİRMA', lastYesil ? fmtPct(lastYesil) : '—', '↑ Yükseliş trendi', 'up')}
     </div>
 
     <div class="charts-grid">
@@ -782,6 +811,77 @@ function renderSatis(rows) {
   // MOS charts
   if (mosZiyaret.length) barChart('c-mos-visit', glbl(mosZiyaret), [{ data: mosZiyaret, backgroundColor: 'rgba(255,107,107,0.65)' }]);
   if (mosYeni.length)    barChart('c-mos-ciro',  glbl(mosYeni),    [{ data: mosYeni,    backgroundColor: 'rgba(255,107,107,0.5)' }]);
+
+  // Burhan Efe eğitim metrikleri
+  const beH1 = findRow(rows,'BE-H1');
+  const beH2 = findRow(rows,'BE-H2');
+  const beH3 = findRow(rows,'BE-H3');
+  const beH4 = findRow(rows,'BE-H4');
+  const beA1 = findRow(rows,'BE-A1');
+  const beA2 = findRow(rows,'BE-A2');
+  const beA3 = findRow(rows,'BE-A3');
+  const beA4 = findRow(rows,'BE-A4');
+
+  const gBe = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const beH1d = beH1 ? getNumericValues(beH1).filter(v=>v>0) : [];
+  const beH2d = beH2 ? getNumericValues(beH2).filter(v=>v>0) : [];
+  const beH3d = beH3 ? getNumericValues(beH3).filter(v=>v>0) : [];
+
+  const beSection = document.createElement('div');
+  beSection.innerHTML = `
+    ${mkSection('Eğitim — BURHAN EFE', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('EĞİTİM VERİLEN FİRMA', gBe(beH1) !== '—' ? gBe(beH1) : gBe(beA1), 'Son dönem', 'neutral')}
+      ${mkCard('EĞİTİM KATILIMCI', gBe(beH2) !== '—' ? gBe(beH2) : gBe(beA2), 'Son dönem', 'neutral')}
+      ${mkCard('EĞİTİM ADEDİ', gBe(beH3) !== '—' ? gBe(beH3) : gBe(beA3), 'Son dönem', 'neutral')}
+      ${mkCard('EĞİTİM SÜRESİ', gBe(beH4) !== '—' ? gBe(beH4)+' dk' : gBe(beA4)+' dk', 'Son dönem', 'neutral')}
+      ${mkCard('AYLIK FİRMA', gBe(beA1), 'Mart 2026', 'neutral')}
+      ${mkCard('AYLIK KATILIMCI', gBe(beA2), 'Mart 2026', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Haftalık Eğitim Verilen Firma</div><div class="chart-sub">BE-H1</div></div>
+        <div style="position:relative;height:180px"><canvas id="c-be-firma"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Haftalık Katılımcı & Eğitim Adedi</div><div class="chart-sub">BE-H2 + BE-H3</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Katılımcı</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Eğitim Adedi</div>
+        </div>
+        <div style="position:relative;height:180px"><canvas id="c-be-katilim"></canvas></div>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Eğitim Aylık Özet — Mart 2026</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Değer</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">BE-A1</td><td>Eğitim Verilen Firma Sayısı</td><td>${gBe(beA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BE-A2</td><td>Eğitim Verilen Katılımcı Sayısı</td><td>${gBe(beA2)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BE-A3</td><td>Eğitim Adedi</td><td>${gBe(beA3)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BE-A4</td><td>Eğitim Süresi (dk)</td><td>${gBe(beA4)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('satis-content').appendChild(beSection);
+
+  const beGlbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  if (beH1d.length) barChart('c-be-firma', beGlbl(beH1d), [{ data: beH1d, backgroundColor: 'rgba(0,212,170,0.7)' }]);
+  if (beH2d.length || beH3d.length) {
+    const len = Math.max(beH2d.length, beH3d.length);
+    const el = document.getElementById('c-be-katilim');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: beGlbl({length:len}), datasets: [
+        { label: 'Katılımcı',    data: beH2d, backgroundColor: 'rgba(0,212,170,0.7)' },
+        { label: 'Eğitim Adedi', data: beH3d, backgroundColor: 'rgba(108,99,255,0.65)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
 }
 
 function renderCagri(rows) {
@@ -791,7 +891,7 @@ function renderCagri(rows) {
       ${mkCard('YENİ ÜYELİK KARŞILAMA', '1.511', '30 Mar–5 Nis', 'neutral')}
       ${mkCard('FEEDBACK ALINAN ÇİFT', '1.022', '30 Mar–5 Nis', 'neutral')}
       ${mkCard('ÜYE YAPMA ORANI', '%92', '↑ İyi', 'up')}
-      ${mkCard('TEKLİF VERİMLİLİK', '%80.4', '↑ Yükseliş', 'up')}
+      ${mkCard('TEKLİF VERİMLİLİK', '%80.36', '↑ Yükseliş', 'up')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -831,13 +931,26 @@ function renderCagri(rows) {
 }
 
 function renderFirma(rows) {
+  const fi1r = findRow(rows,'Fİ-H1');
+  const fi2r = findRow(rows,'Fİ-H2');
+  const fi3r = findRow(rows,'Fİ-H3');
+  const fi4r = findRow(rows,'Fİ-H4');
+  const fi5r = findRow(rows,'Fİ-H5');
+  const fi11r = findRow(rows,'Fİ-H11');
+  const lastYesilF   = fi1r  ? getLastNonEmpty(fi1r)  : null;
+  const lastSariF    = fi2r  ? getLastNonEmpty(fi2r)   : null;
+  const lastTuruncuF = fi3r  ? getLastNonEmpty(fi3r)   : null;
+  const lastKirmiziF = fi4r  ? getLastNonEmpty(fi4r)   : null;
+  const lastWelcomeF = fi5r  ? getLastNonEmpty(fi5r)   : null;
+  const toplam = (lastYesilF||0)+(lastSariF||0)+(lastTuruncuF||0)+(lastKirmiziF||0)+(lastWelcomeF||0) || 2379;
   document.getElementById('firma-content').innerHTML = `
     <div class="cards-grid">
-      ${mkCard('YEŞİL FİRMA', '1.440', '%60.5', 'up')}
-      ${mkCard('SARI FİRMA', '555', '%23.3', 'neutral')}
-      ${mkCard('TURUNCU FİRMA', '130', '%5.5', 'neutral')}
-      ${mkCard('KIRMIZI FİRMA', '141', '%5.9', 'down')}
-      ${mkCard('WELCOME', '113', '%4.8', 'neutral')}
+      ${mkCard('YEŞİL FİRMA', lastYesilF ? lastYesilF.toLocaleString('tr') : '—', fmtPct(lastYesilF ? (lastYesilF/toplam*100) : null)+' oran', 'up')}
+      ${mkCard('SARI FİRMA', lastSariF ? lastSariF.toLocaleString('tr') : '—', fmtPct(lastSariF ? (lastSariF/toplam*100) : null)+' oran', 'neutral')}
+      ${mkCard('TURUNCU FİRMA', lastTuruncuF ? lastTuruncuF.toLocaleString('tr') : '—', fmtPct(lastTuruncuF ? (lastTuruncuF/toplam*100) : null)+' oran', 'neutral')}
+      ${mkCard('KIRMIZI FİRMA', lastKirmiziF ? lastKirmiziF.toLocaleString('tr') : '—', fmtPct(lastKirmiziF ? (lastKirmiziF/toplam*100) : null)+' oran', 'down')}
+      ${mkCard('WELCOME', lastWelcomeF ? lastWelcomeF.toLocaleString('tr') : '—', fmtPct(lastWelcomeF ? (lastWelcomeF/toplam*100) : null)+' oran', 'neutral')}
+      ${mkCard('TOPLAM', toplam.toLocaleString('tr'), 'Son hafta', 'neutral')}
       ${mkCard('TOPLAM', '2.379', '6-12 Nis 2026', 'neutral')}
     </div>
     <div class="charts-grid">
@@ -865,7 +978,7 @@ function renderFirma(rows) {
     const s = String(v||'').replace('%','').replace(',','.').trim();
     const n = parseFloat(s);
     if (isNaN(n)) return null;
-    return n > 1 ? n : n * 100;
+    return n > 1 ? Math.round(n*100)/100 : Math.round(n*10000)/100;
   }).filter(v => v !== null) : [57.35,59.59,58.56,60.50,60.01,60.53];
 
   lineChart('c-yesil-trend', WEEKS.slice(0, yesilTrend.length),
@@ -888,47 +1001,125 @@ function renderFirma(rows) {
 }
 
 function renderIK(rows) {
+  // AS — Ali Saadat
+  const asH1 = findRow(rows,'AS-H1'); // İç proje ilerleme %
+  const asH2 = findRow(rows,'AS-H2'); // Kod/model review sayısı
+  const asH3 = findRow(rows,'AS-H3'); // Teknokent proje ilerleme %
+  const asH4 = findRow(rows,'AS-H4'); // R&D rapor/doküman
+  const asA1 = findRow(rows,'AS-A1'); // Production ML sistemi
+  const asA2 = findRow(rows,'AS-A2'); // TÜBİTAK proje ilerleme %
+  const asA3 = findRow(rows,'AS-A3'); // Teknokent proje ilerleme %
+  const asA4 = findRow(rows,'AS-A4'); // R&D rapor/doküman aylık
+
+  // DB — Dilek Bıçakçı
+  const dbA1 = findRow(rows,'DB-A1'); // Kapatılan iş score
+  const dbA2 = findRow(rows,'DB-A2'); // Kapatılan geliştirme
+  const dbA3 = findRow(rows,'DB-A3'); // Hotfix
+  const dbA4 = findRow(rows,'DB-A4'); // AWS maliyeti
+
+  const g    = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? fmtPct(v) : '—'; };
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+
+  const asH1d = asH1 ? getNumericValues(asH1).filter(v=>v>0) : [];
+  const asH2d = asH2 ? getNumericValues(asH2).filter(v=>v>0) : [];
+  const asH3d = asH3 ? getNumericValues(asH3).filter(v=>v>0) : [];
+
   document.getElementById('ik-content').innerHTML = `
+
+    ${mkSection('Ar-Ge & AI — ALİ SAADAT', '#6c63ff')}
     <div class="cards-grid">
-      ${mkCard('TOPLAM ÇALIŞAN', '80', 'Mart 2026', 'neutral')}
-      ${mkCard('AYLIK İŞE ALIM', '12', '', 'neutral')}
-      ${mkCard('TEKLİF KABUL', '%92', '↑ Yüksek', 'up')}
-      ${mkCard('RETENTION (3 AY)', '%100', '↑ Mükemmel', 'up')}
-      ${mkCard('TURNOVER', '%1.25', '↓ Düşük (iyi)', 'up')}
-      ${mkCard('AWS MALİYETİ', '$10.5K', 'Mart 2026', 'neutral')}
+      ${mkCard('İÇ PROJE İLERLEME', gPct(asH1), 'Son hafta', 'neutral')}
+      ${mkCard('KOD/MODEL REVIEW', g(asH2), 'Son hafta', 'neutral')}
+      ${mkCard('TEKNOKENT İLERLEME', gPct(asH3), 'Son hafta', 'neutral')}
+      ${mkCard('R&D RAPOR/DOKÜMAN', g(asH4), 'Son hafta', 'neutral')}
+      ${mkCard('PRODUCTION ML SİSTEM', g(asA1), 'Aylık', 'up')}
+      ${mkCard('TÜBİTAK İLERLEME', gPct(asA2), 'Aylık', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">İç Proje İlerleme Trendi</div><div class="chart-sub">AS-H1 · Haftalık %</div></div>
+        ${mkChart('c-as-ic', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Teknokent Proje İlerleme</div><div class="chart-sub">AS-H3 · Haftalık %</div></div>
+        ${mkChart('c-as-tek', 200)}
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Kod / Model Review Sayısı</div><div class="chart-sub">AS-H2 · Haftalık</div></div>
+        ${mkChart('c-as-review', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">R&D Rapor / Doküman</div><div class="chart-sub">AS-H4 · Haftalık</div></div>
+        ${mkChart('c-as-rnd', 180)}
+      </div>
     </div>
 
     <div class="table-card">
-      <div class="table-title">İK Özet — Mart 2026</div>
+      <div class="table-title">Ali Saadat — Aylık Özet</div>
       <table>
-        <thead><tr><th>Metrik</th><th>Değer</th><th>Durum</th></tr></thead>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Değer</th><th>Durum</th></tr></thead>
         <tbody>
-          <tr><td>İşe Alım Sayısı</td><td>12</td><td><span class="badge badge-green">Normal</span></td></tr>
-          <tr><td>Açık Pozisyon</td><td>12</td><td><span class="badge badge-amber">Devam Ediyor</span></td></tr>
-          <tr><td>Görüşme Sayısı</td><td>89</td><td><span class="badge badge-green">Aktif</span></td></tr>
-          <tr><td>Ort. Kapanma Süresi</td><td>22 gün</td><td><span class="badge badge-green">İyi</span></td></tr>
-          <tr><td>Teklif Kabul Oranı</td><td>%92</td><td><span class="badge badge-green">Yüksek</span></td></tr>
-          <tr><td>3 Ay Retention</td><td>%100</td><td><span class="badge badge-green">Mükemmel</span></td></tr>
-          <tr><td>Turnover Rate</td><td>%1.25</td><td><span class="badge badge-green">Düşük</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">AS-A1</td><td>Production'a Alınan ML Sistemi</td><td>${g(asA1)}</td><td><span class="badge badge-green">Tamamlandı</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">AS-A2</td><td>TÜBİTAK Proje İlerleme</td><td>${gPct(asA2)}</td><td><span class="badge ${getLastNonEmpty(asA2)>0?'badge-green':'badge-amber'}">${getLastNonEmpty(asA2)>0?'Devam Ediyor':'Bekleniyor'}</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">AS-A3</td><td>Teknokent Proje İlerleme</td><td>${gPct(asA3)}</td><td><span class="badge badge-green">Tamamlandı</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">AS-A4</td><td>R&D Rapor / Teknik Doküman</td><td>${g(asA4)}</td><td><span class="badge badge-green">Aktif</span></td></tr>
         </tbody>
       </table>
     </div>
 
-    <div class="table-card">
-      <div class="table-title">Teknik & Ürün — Mart 2026</div>
-      <table>
-        <thead><tr><th>Metrik</th><th>Değer</th><th>Durum</th></tr></thead>
-        <tbody>
-          <tr><td>Kapatılan İş Score</td><td>650.51</td><td><span class="badge badge-green">Hedefte</span></td></tr>
-          <tr><td>Kapatılan Geliştirme</td><td>187</td><td><span class="badge badge-green">Aktif</span></td></tr>
-          <tr><td>Hotfix Sayısı</td><td>5</td><td><span class="badge badge-amber">Takipte</span></td></tr>
-          <tr><td>AWS Maliyeti</td><td>$10.500</td><td><span class="badge badge-amber">İzleniyor</span></td></tr>
-          <tr><td>Production ML Sistemi</td><td>1</td><td><span class="badge badge-green">Tamamlandı</span></td></tr>
-          <tr><td>Teknokent Proje</td><td>%100</td><td><span class="badge badge-green">Tamamlandı</span></td></tr>
-        </tbody>
-      </table>
+    ${mkSection('Ürün & Teknik — DİLEK BIÇAKCI', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('KAPATILAN İŞ SCORE', g(dbA1), 'Aylık', 'neutral')}
+      ${mkCard('KAPATILAN GELİŞTİRME', g(dbA2), 'Aylık', 'neutral')}
+      ${mkCard('HOTFİX SAYISI', g(dbA3), 'Aylık', dbA3 && getLastNonEmpty(dbA3) > 5 ? 'down' : 'neutral')}
+      ${mkCard('AWS MALİYETİ', dbA4 ? '$'+(getLastNonEmpty(dbA4)||0).toLocaleString('tr') : '—', 'Aylık USD', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Kapatılan Geliştirme</div><div class="chart-sub">DB-A2 · Aylık adet</div></div>
+        ${mkChart('c-db-dev', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Hotfix & AWS Maliyeti</div><div class="chart-sub">DB-A3 + DB-A4</div></div>
+        ${mkChart('c-db-ops', 180)}
+      </div>
     </div>
   `;
+
+  // AS charts
+  if (asH1d.length) lineChart('c-as-ic', glbl(asH1d),
+    [{ data: asH1d, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
+  if (asH3d.length) lineChart('c-as-tek', glbl(asH3d),
+    [{ data: asH3d, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
+  if (asH2d.length) barChart('c-as-review', glbl(asH2d),
+    [{ data: asH2d, backgroundColor: 'rgba(255,169,77,0.7)' }]);
+
+  const asH4d = asH4 ? getNumericValues(asH4).filter(v=>v>=0) : [];
+  if (asH4d.length) barChart('c-as-rnd', glbl(asH4d),
+    [{ data: asH4d, backgroundColor: 'rgba(255,107,107,0.65)' }]);
+
+  // DB charts
+  const dbA2v = dbA2 ? getLastNonEmpty(dbA2)||0 : 187;
+  const el1 = document.getElementById('c-db-dev');
+  if (el1) new Chart(el1, {
+    type: 'bar',
+    data: { labels: ['Kapatılan Geliştirme'], datasets: [{ data: [dbA2v], backgroundColor: ['rgba(0,212,170,0.7)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+
+  const dbA3v = dbA3 ? getLastNonEmpty(dbA3)||0 : 5;
+  const dbA4v = dbA4 ? getLastNonEmpty(dbA4)||0 : 10500;
+  const el2 = document.getElementById('c-db-ops');
+  if (el2) new Chart(el2, {
+    type: 'bar',
+    data: { labels: ['Hotfix Sayısı', 'AWS ($)'], datasets: [{ data: [dbA3v, dbA4v], backgroundColor: ['rgba(255,107,107,0.7)', 'rgba(255,169,77,0.65)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
 }
 
 function renderFinans(rows) {
@@ -966,7 +1157,7 @@ function renderFinans(rows) {
   const bgA8 = findRow(rows,'BG-A8');
 
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
-  const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? '%'+v : '—'; };
+  const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? fmtPct(v) : '—'; };
 
   // Günlük tahsilat verileri
   const ep1d = ep1 ? getNumericValues(ep1).filter(v=>v>0) : [];
@@ -1122,7 +1313,7 @@ function renderSEO(rows) {
 
   const convRate = (tkA2d.length && tkA3d.length) ? (() => {
     const c = tkA2d[tkA2d.length-1]; const n = tkA3d[tkA3d.length-1];
-    return ((c/(c+n))*100).toFixed(1)+'%';
+    return fmtPct((c/(c+n))*100);
   })() : '—';
 
   document.getElementById('seo-content').innerHTML = `
@@ -1252,7 +1443,7 @@ function renderDijital(rows) {
     ${mkSection('Lead & Conversion — UMUT SEYARCI', '#6c63ff')}
     <div class="cards-grid">
       ${mkCard('TOTAL LEAD', lastH1 ? lastH1.toLocaleString('tr') : '—', 'Son hafta', 'neutral')}
-      ${mkCard('CONVERSION RATE', lastH2 ? lastH2.toFixed(1)+'%' : '—', prevH2 !== null ? (lastH2 > prevH2 ? '↑ Artış' : '↓ Düşüş') : '', prevH2 !== null ? (lastH2 > prevH2 ? 'up' : 'down') : 'neutral')}
+      ${mkCard('CONVERSION RATE', lastH2 ? fmtPct(lastH2) : '—', prevH2 !== null ? (lastH2 > prevH2 ? '↑ Artış' : '↓ Düşüş') : '', prevH2 !== null ? (lastH2 > prevH2 ? 'up' : 'down') : 'neutral')}
       ${mkCard('LEAD PER COUPLE', lastH3 ? lastH3.toFixed(2) : '—', 'Son hafta', 'neutral')}
       ${mkCard('FİNALİZE PROJE', g(usA1), 'Aylık', 'neutral')}
       ${mkCard('BEKLENEN ETKİ', g(usA2), 'Aylık TL', 'neutral')}
@@ -1307,7 +1498,7 @@ function renderDijital(rows) {
         <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Sorumlu</th><th>Son Değer</th></tr></thead>
         <tbody>
           <tr><td style="font-family:var(--mono);font-size:11px">US-H1</td><td>Total Lead</td><td>UMUT SEYARCI</td><td>${lastH1 ? lastH1.toLocaleString('tr') : '—'}</td></tr>
-          <tr><td style="font-family:var(--mono);font-size:11px">US-H2</td><td>Quality Session to Couple Conv. Rate</td><td>UMUT SEYARCI</td><td>${lastH2 ? lastH2.toFixed(1)+'%' : '—'}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">US-H2</td><td>Quality Session to Couple Conv. Rate</td><td>UMUT SEYARCI</td><td>${lastH2 ? fmtPct(lastH2) : '—'}</td></tr>
           <tr><td style="font-family:var(--mono);font-size:11px">US-H3</td><td>Lead per Couple</td><td>UMUT SEYARCI</td><td>${lastH3 ? lastH3.toFixed(2) : '—'}</td></tr>
           <tr><td style="font-family:var(--mono);font-size:11px">US-A1</td><td>Finalize Edilen Proje & Test</td><td>UMUT SEYARCI</td><td>${g(usA1)}</td></tr>
           <tr><td style="font-family:var(--mono);font-size:11px">UD-A1</td><td>Paid Lead</td><td>UMUT DUMAN</td><td>${g(udA1)}</td></tr>
@@ -1355,6 +1546,166 @@ function renderDijital(rows) {
   });
 }
 
+function renderPazarlama(rows) {
+  // BY-H — Haftalık (AYCAN veri girişi)
+  const byH1 = findRow(rows,'BY-H1'); // Çekim/Edit
+  const byH2 = findRow(rows,'BY-H2'); // Masaüstü Video/Edit
+  const byH3 = findRow(rows,'BY-H3'); // B2C Gönderi
+  const byH4 = findRow(rows,'BY-H4'); // B2C Story
+  const byH5 = findRow(rows,'BY-H5'); // B2B Gönderi
+
+  // BY-A — Aylık (BÜRDE veri girişi)
+  const byA1  = findRow(rows,'BY-A1');  // Ürün Giriş
+  const byA2  = findRow(rows,'BY-A2');  // Ürün Sayfaları Görüntülenme
+  const byA3  = findRow(rows,'BY-A3');  // Makale Revize
+  const byA4  = findRow(rows,'BY-A4');  // Yeni Makale
+  const byA5  = findRow(rows,'BY-A5');  // SEO İçerik
+  const byA9  = findRow(rows,'BY-A9');  // Mailing Görsel
+  const byA11 = findRow(rows,'BY-A11'); // AI Gelinlik Videolaştırma
+  const byA12 = findRow(rows,'BY-A12'); // Instagram'dan Gelen Trafik
+  const byA13 = findRow(rows,'BY-A13'); // B2C Instagram Görüntülenme
+  const byA14 = findRow(rows,'BY-A14'); // B2C Instagram Erişim
+  const byA15 = findRow(rows,'BY-A15'); // Green Screen Çekim
+
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  const glblA = arr => Array.from({length:arr.length},(_,i)=>`A${i+1}`);
+
+  const byH3d = byH3 ? getNumericValues(byH3).filter(v=>v>0) : [];
+  const byH4d = byH4 ? getNumericValues(byH4).filter(v=>v>0) : [];
+  const byH1d = byH1 ? getNumericValues(byH1).filter(v=>v>=0) : [];
+  const byH2d = byH2 ? getNumericValues(byH2).filter(v=>v>=0) : [];
+
+  document.getElementById('pazarlama-content').innerHTML = `
+
+    ${mkSection('Sosyal Medya — AYCAN ALPARSLAN', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('B2C GÖNDERİ', g(byH3), 'Son hafta', 'neutral')}
+      ${mkCard('B2C STORY', g(byH4), 'Son hafta', 'neutral')}
+      ${mkCard('B2B GÖNDERİ', g(byH5), 'Son hafta', 'neutral')}
+      ${mkCard('ÇEKİM/EDİT', g(byH1), 'Son hafta', 'neutral')}
+      ${mkCard('MASAÜSTÜ VİDEO', g(byH2), 'Son hafta', 'neutral')}
+      ${mkCard('INSTAGRAM TRAFİK', g(byA12), 'Aylık', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">B2C Gönderi & Story Trendi</div><div class="chart-sub">BY-H3 + BY-H4 · Haftalık</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Gönderi</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Story</div>
+        </div>
+        ${mkChart('c-by-sosyal', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Çekim & Video Üretimi</div><div class="chart-sub">BY-H1 + BY-H2 · Haftalık</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#ffa94d"></div>Çekim/Edit</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Masaüstü Video</div>
+        </div>
+        ${mkChart('c-by-video', 200)}
+      </div>
+    </div>
+
+    <div class="cards-grid" style="margin-top:8px">
+      ${mkCard('INSTAGRAM GÖRÜNTÜLENME', g(byA13), 'Aylık', 'neutral')}
+      ${mkCard('INSTAGRAM ERİŞİM', g(byA14), 'Aylık', 'neutral')}
+      ${mkCard('GREEN SCREEN ÇEKİM', g(byA15), 'Aylık', 'neutral')}
+    </div>
+
+    ${mkSection('İçerik & SEO — BÜRDE ÖZÇAKIR', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('ÜRÜN GİRİŞ', g(byA1), 'Aylık', 'neutral')}
+      ${mkCard('ÜRÜN SAYFASI GÖRÜNTÜLENME', g(byA2), 'Aylık', 'up')}
+      ${mkCard('MAKALE REVİZE', g(byA3), 'Aylık', 'neutral')}
+      ${mkCard('YENİ MAKALE', g(byA4), 'Aylık', 'neutral')}
+      ${mkCard('SEO İÇERİK', g(byA5), 'Aylık', 'neutral')}
+      ${mkCard('MAİLİNG GÖRSEL', g(byA9), 'Aylık', 'neutral')}
+      ${mkCard('AI GELİNLİK VİDEO', g(byA11), 'Aylık', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">İçerik Üretim Özeti</div><div class="chart-sub">BY-A · Aylık karşılaştırma</div></div>
+        ${mkChart('c-by-icerik', 220)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Ürün Sayfası Görüntülenme</div><div class="chart-sub">BY-A2 · Aylık</div></div>
+        ${mkChart('c-by-urun', 220)}
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">Pazarlama İçerik — Metrik Özeti</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Sorumlu</th><th>Son Değer</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-H3</td><td>B2C Gönderi Sayısı</td><td>BÜRDE ÖZÇAKIR</td><td>${g(byH3)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-H4</td><td>B2C Story Sayısı</td><td>BÜRDE ÖZÇAKIR</td><td>${g(byH4)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-H1</td><td>Çekim/Edit</td><td>AYCAN ALPARSLAN</td><td>${g(byH1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-A1</td><td>Ürün Giriş</td><td>AYCAN ALPARSLAN</td><td>${g(byA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-A2</td><td>Ürün Sayfaları Görüntülenme</td><td>AYCAN ALPARSLAN</td><td>${g(byA2)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-A5</td><td>SEO İçerik</td><td>AYCAN ALPARSLAN</td><td>${g(byA5)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-A12</td><td>Instagram'dan Gelen Trafik</td><td>BÜRDE ÖZÇAKIR</td><td>${g(byA12)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-A13</td><td>B2C Instagram Görüntülenme</td><td>BÜRDE ÖZÇAKIR</td><td>${g(byA13)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">BY-A14</td><td>B2C Instagram Erişim</td><td>BÜRDE ÖZÇAKIR</td><td>${g(byA14)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Sosyal medya haftalık grafikleri
+  const byH5d = byH5 ? getNumericValues(byH5).filter(v=>v>=0) : [];
+  const len34 = Math.max(byH3d.length, byH4d.length);
+  if (len34 > 0) {
+    const el = document.getElementById('c-by-sosyal');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: WEEKS.slice(0, len34), datasets: [
+        { label: 'Gönderi', data: byH3d, backgroundColor: 'rgba(108,99,255,0.7)' },
+        { label: 'Story',   data: byH4d, backgroundColor: 'rgba(0,212,170,0.65)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+
+  const len12 = Math.max(byH1d.length, byH2d.length);
+  if (len12 > 0) {
+    const el = document.getElementById('c-by-video');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: WEEKS.slice(0, len12), datasets: [
+        { label: 'Çekim/Edit',      data: byH1d, backgroundColor: 'rgba(255,169,77,0.7)' },
+        { label: 'Masaüstü Video',  data: byH2d, backgroundColor: 'rgba(255,107,107,0.6)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+
+  // İçerik üretim özeti
+  const icerikLabels = ['Ürün Giriş','Makale Revize','Yeni Makale','SEO İçerik','Mailing Görsel','AI Gelinlik'];
+  const icerikData = [byA1,byA3,byA4,byA5,byA9,byA11].map(r => r ? getLastNonEmpty(r)||0 : 0);
+  const elI = document.getElementById('c-by-icerik');
+  if (elI) new Chart(elI, {
+    type: 'bar',
+    data: { labels: icerikLabels, datasets: [{ data: icerikData,
+      backgroundColor: ['rgba(0,212,170,0.7)','rgba(108,99,255,0.7)','rgba(255,169,77,0.65)','rgba(81,207,102,0.7)','rgba(255,107,107,0.6)','rgba(204,93,232,0.65)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 10 } } } } }
+  });
+
+  // Ürün sayfası görüntülenme
+  const byA2v = byA2 ? getLastNonEmpty(byA2)||0 : 0;
+  const elU = document.getElementById('c-by-urun');
+  if (elU) new Chart(elU, {
+    type: 'bar',
+    data: { labels: ['Ürün Sayfası Görüntülenme'], datasets: [{ data: [byA2v], backgroundColor: ['rgba(0,212,170,0.7)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v>=1000?(v/1000).toFixed(0)+'K':v } } } }
+  });
+}
+
 async function loadData() {
   try {
     const rows = await fetchSheetData();
@@ -1367,6 +1718,7 @@ async function loadData() {
     renderFinans(rows);
     renderSEO(rows);
     renderDijital(rows);
+    renderPazarlama(rows);
   } catch (e) {
     document.getElementById('last-update').textContent = 'Bağlantı hatası — statik veri';
     renderGenel([]);
@@ -1377,6 +1729,7 @@ async function loadData() {
     renderFinans([]);
     renderSEO([]);
     renderDijital([]);
+    renderPazarlama([]);
   }
 }
 
