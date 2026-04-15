@@ -238,6 +238,18 @@
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="1.5"/></svg>
       İK & Teknik
     </div>
+    <div class="nav-item" onclick="goTo('finans')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="1.5"/></svg>
+      Finans & İK
+    </div>
+    <div class="nav-item" onclick="goTo('seo')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="1.5"/><path d="M21 21l-4.35-4.35" stroke-width="1.5" stroke-linecap="round"/></svg>
+      SEO
+    </div>
+    <div class="nav-item" onclick="goTo('dijital')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Dijital Büyüme
+    </div>
 
     <div class="sidebar-label">Ayarlar</div>
     <div class="nav-item" onclick="goTo('ayarlar')">
@@ -295,7 +307,33 @@
     </div>
 
     <!-- AYARLAR -->
-    <div class="page" id="page-ayarlar">
+    <div class="page" id="page-finans">
+      <div class="page-header">
+        <div class="page-title">Finans & Satınalma & İK</div>
+        <div class="page-desc">GÖKHAN DÖNMEZ sorumluluğundaki metrikler</div>
+      </div>
+      <div id="finans-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- AYARLAR -->
+    <div class="page" id="page-seo">
+      <div class="page-header">
+        <div class="page-title">SEO</div>
+        <div class="page-desc">TUĞÇE KARACA · Organik trafik & anahtar kelime metrikleri</div>
+      </div>
+      <div id="seo-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- DİJİTAL BÜYÜME -->
+    <div class="page" id="page-dijital">
+      <div class="page-header">
+        <div class="page-title">Dijital Büyüme</div>
+        <div class="page-desc">UMUT SEYARCI · Lead, conversion & proje metrikleri</div>
+      </div>
+      <div id="dijital-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- AYARLAR -->
       <div class="page-header">
         <div class="page-title">Ayarlar</div>
         <div class="page-desc">Google Sheets bağlantısını yapılandır</div>
@@ -440,7 +478,29 @@ function doughnutChart(id, labels, data, colors) {
 
 // ─── PAGE RENDERERS ──────────────────────────────────────
 function findRow(rows, id) {
-  return rows.find(r => String(r[0]).trim() === id);
+  return rows.find(r => r.some(cell => String(cell).trim() === id));
+}
+
+function getRowValues(row, rows) {
+  // Find the header row to understand column positions
+  if (!row) return [];
+  // Return all values from index 6 onwards (after metadata columns)
+  return row.slice(6).map(v => parseNum(v));
+}
+
+function getNumericValues(row) {
+  if (!row) return [];
+  // Skip first 6 metadata columns, get all numeric values
+  return row.slice(6).map(v => parseNum(v)).filter(v => v !== null && v !== 0 || v === 0);
+}
+
+function getLastNonEmpty(row) {
+  if (!row) return null;
+  const vals = row.slice(6).map(v => parseNum(v));
+  for (let i = vals.length - 1; i >= 0; i--) {
+    if (vals[i] !== null) return vals[i];
+  }
+  return null;
 }
 
 function renderGenel(rows) {
@@ -451,18 +511,28 @@ function renderGenel(rows) {
   const fi6 = findRow(rows, 'Fİ-H6');
   const zo1 = rows.find(r => r[0] === 'ZO-H1');
 
-  const leads = h1 ? [h1[6],h1[7],h1[8],h1[9],h1[10]].map(parseNum).filter(Boolean) : [];
-  const convs = h2 ? [h2[6],h2[7],h2[8],h2[9],h2[10]].map(v => parseNum(v?.replace('%','').replace(',','.'))) : [];
-  const lastLead = leads[leads.length-1];
-  const lastConv = convs[convs.length-1];
-  const lastFirma = fi11 ? parseNum(fi11[11]) : null;
-  const lastYesil = fi6 ? parseNum(fi6[11]?.replace('%','').replace(',','.')) : null;
+  const leads = h1 ? getNumericValues(h1).filter(v => v > 0) : [];
+  const convRaw = h2 ? h2.slice(6).map(v => {
+    if (!v || v === '') return null;
+    const s = String(v).replace('%','').replace(/\./g,'').replace(',','.').trim();
+    const n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }).filter(v => v !== null) : [];
+  const convs = convRaw;
+  const lastLead = leads.length ? leads[leads.length-1] : null;
+  const lastConv = convs.length ? convs[convs.length-1] : null;
+  const lastFirma = getLastNonEmpty(fi11);
+  const lastYesil = fi6 ? (() => {
+    const v = getLastNonEmpty(fi6);
+    if (!v) return null;
+    return v > 1 ? v : v * 100; // handle both 60.5 and 0.605
+  })() : null;
 
   document.getElementById('genel-content').innerHTML = `
     <div class="cards-grid">
       ${mkCard('TOTAL LEAD', lastLead ? lastLead.toLocaleString('tr') : '—', '30 Mar–5 Nis 2026', 'neutral')}
       ${mkCard('CONVERSION RATE', lastConv ? lastConv.toFixed(1)+'%' : '—', convs.length>=2 ? (lastConv>convs[convs.length-2]?'↑ Artış':'↓ Düşüş') : '', lastConv && convs.length>=2 ? (lastConv>convs[convs.length-2]?'up':'down') : 'neutral')}
-      ${mkCard('LEAD PER COUPLE', h3 ? (h3[10]||'—') : '—', '', 'neutral')}
+      ${mkCard('LEAD PER COUPLE', h3 ? (() => { const v = getLastNonEmpty(h3); return v !== null ? v.toFixed(2) : '—'; })() : '—', '', 'neutral')}
       ${mkCard('TOPLAM FİRMA', lastFirma ? lastFirma.toLocaleString('tr') : '—', '6–12 Nis 2026', 'neutral')}
       ${mkCard('YEŞİL FİRMA', lastYesil ? '%'+lastYesil.toFixed(1) : '—', '↑ Yükseliş trendi', 'up')}
     </div>
@@ -512,9 +582,9 @@ function renderGenel(rows) {
     </div>
   `;
 
-  lineChart('c-lead', WEEKS.slice(0,5),
+  lineChart('c-lead', WEEKS.slice(0, leads.length),
     [{ data: leads, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
-  lineChart('c-conv', WEEKS.slice(0,5),
+  lineChart('c-conv', WEEKS.slice(0, convs.length),
     [{ data: convs, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
 
   const fi = {
@@ -523,85 +593,195 @@ function renderGenel(rows) {
   };
   doughnutChart('c-saglik',
     ['Yeşil','Sarı','Turuncu','Kırmızı'],
-    [fi.yesil?parseNum(fi.yesil[11]):0, fi.sari?parseNum(fi.sari[11]):0, fi.turuncu?parseNum(fi.turuncu[11]):0, fi.kirmizi?parseNum(fi.kirmizi[11]):0],
+    [fi.yesil ? getLastNonEmpty(fi.yesil)||0 : 0,
+     fi.sari  ? getLastNonEmpty(fi.sari)||0  : 0,
+     fi.turuncu ? getLastNonEmpty(fi.turuncu)||0 : 0,
+     fi.kirmizi ? getLastNonEmpty(fi.kirmizi)||0 : 0],
     ['#51cf66','#ffa94d','#e8590c','#ff6b6b']
   );
 
   const zo1r = findRow(rows, 'ZO-H1');
   const zo2r = findRow(rows, 'ZO-H2');
-  const zoLabels = WEEKS;
-  const zo1d = zo1r ? [zo1r[6],zo1r[7],zo1r[8],zo1r[9],zo1r[10],zo1r[11]].map(v=>parseNum(v)||0) : [];
-  const zo2d = zo2r ? [zo2r[6],zo2r[7],zo2r[8],zo2r[9],zo2r[10],zo2r[11]].map(v=>parseNum(v)||0) : [];
-  barChart('c-onboard', zoLabels,
+  const zo1d = zo1r ? getNumericValues(zo1r) : [];
+  const zo2d = zo2r ? getNumericValues(zo2r) : [];
+  const zoLen = Math.max(zo1d.length, zo2d.length);
+  barChart('c-onboard', WEEKS.slice(0, zoLen),
     [{ data: zo1d, backgroundColor: 'rgba(108,99,255,0.7)', label: 'Onboarding' },
      { data: zo2d, backgroundColor: 'rgba(0,212,170,0.7)', label: 'Mezuniyet' }]);
 }
 
+function fmtTL(v) {
+  if (!v) return '—';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M ₺';
+  if (v >= 1e3) return (v/1e3).toFixed(0) + 'K ₺';
+  return v.toLocaleString('tr') + ' ₺';
+}
+
+function mkSection(title, color) {
+  return `<div style="display:flex;align-items:center;gap:10px;margin:28px 0 14px;">
+    <div style="width:4px;height:20px;border-radius:2px;background:${color}"></div>
+    <div style="font-size:15px;font-weight:600;color:var(--text)">${title}</div>
+  </div>`;
+}
+
 function renderSatis(rows) {
-  const ot7 = findRow(rows,'ÖT-G7');
-  const ot8 = findRow(rows,'ÖT-G8');
-  const ot9 = findRow(rows,'ÖT-G9');
-  const ot1 = findRow(rows,'ÖT-G1');
+  const ot1  = findRow(rows,'ÖT-G1');
+  const ot4  = findRow(rows,'ÖT-G4');
+  const ot7  = findRow(rows,'ÖT-G7');
+  const ot8  = findRow(rows,'ÖT-G8');
+  const ot9  = findRow(rows,'ÖT-G9');
+  const ot10 = findRow(rows,'ÖT-G10');
+  const ot11 = findRow(rows,'ÖT-G11');
+  const ot12 = findRow(rows,'ÖT-G12');
+  const ot13 = findRow(rows,'ÖT-G13');
+  const ot14 = findRow(rows,'ÖT-G14');
+  const ot15 = findRow(rows,'ÖT-G15');
+  const ot16 = findRow(rows,'ÖT-G16');
+  const ot17 = findRow(rows,'ÖT-G17');
+  const ot18 = findRow(rows,'ÖT-G18');
+
+  const sasZiyaret   = ot1  ? getNumericValues(ot1).filter(v=>v>0)  : [];
+  const sasSure      = ot4  ? getNumericValues(ot4).filter(v=>v>0)  : [];
+  const sasYeni      = ot7  ? getNumericValues(ot7).filter(v=>v>0)  : [];
+  const sasYenileme  = ot8  ? getNumericValues(ot8).filter(v=>v>0)  : [];
+  const tesGorusme   = ot9  ? getNumericValues(ot9).filter(v=>v>0)  : [];
+  const tesSure      = ot10 ? getNumericValues(ot10).filter(v=>v>0) : [];
+  const tesYeni      = ot11 ? getNumericValues(ot11).filter(v=>v>0) : [];
+  const tesYenileme  = ot12 ? getNumericValues(ot12).filter(v=>v>0) : [];
+  const sadFirma     = ot13 ? getNumericValues(ot13).filter(v=>v>0) : [];
+  const sadSure      = ot14 ? getNumericValues(ot14).filter(v=>v>0) : [];
+  const sadRandevu   = ot15 ? getNumericValues(ot15).filter(v=>v>0) : [];
+  const mosZiyaret   = ot16 ? getNumericValues(ot16).filter(v=>v>0) : [];
+  const mosSure      = ot17 ? getNumericValues(ot17).filter(v=>v>0) : [];
+  const mosYeni      = ot18 ? getNumericValues(ot18).filter(v=>v>0) : [];
+
+  const last = arr => arr.length ? arr[arr.length-1] : null;
+  const sum  = arr => arr.reduce((a,b)=>a+b,0);
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`G${i+1}`);
 
   document.getElementById('satis-content').innerHTML = `
+
+    ${mkSection('SAS — Saha Satış', '#6c63ff')}
     <div class="cards-grid">
-      ${mkCard('SAS SATIŞ YENİ (Aylık)', '6.6M ₺', 'Mart 2026', 'neutral')}
-      ${mkCard('SAS SATIŞ YENİLEME', '17.2M ₺', 'Mart 2026', 'neutral')}
-      ${mkCard('TES SATIŞ YENİ', '617K ₺', 'Mart 2026', 'neutral')}
-      ${mkCard('SAD GÖRÜŞÜLEN', '1.396', 'Mart 2026', 'neutral')}
-      ${mkCard('SAD RANDEVU', '414', 'Mart 2026', 'neutral')}
+      ${mkCard('ZİYARET (TOPLAM)', last(sasZiyaret) ? last(sasZiyaret).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
+      ${mkCard('ZİYARET SÜRESİ', last(sasSure) ? last(sasSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
+      ${mkCard('SATIŞ YENİ', fmtTL(sum(sasYeni)), 'Toplam dönem', 'up')}
+      ${mkCard('SATIŞ YENİLEME', fmtTL(sum(sasYenileme)), 'Toplam dönem', 'up')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Günlük SAS Ziyaret</div><div class="chart-sub">ÖT-G1 · Mart 2026</div></div>
+        <div class="chart-header"><div class="chart-title">Günlük Ziyaret Adedi</div><div class="chart-sub">ÖT-G1</div></div>
         ${mkChart('c-sas-visit', 180)}
       </div>
       <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">TES Görüşme Adedi</div><div class="chart-sub">ÖT-G9 · Günlük</div></div>
-        ${mkChart('c-tes', 180)}
+        <div class="chart-header"><div class="chart-title">Satış Cirosu — Yeni vs Yenileme</div><div class="chart-sub">ÖT-G7 + ÖT-G8 · ₺</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Yeni</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Yenileme</div>
+        </div>
+        ${mkChart('c-sas-ciro', 180)}
       </div>
     </div>
-    <div class="chart-card" style="margin-bottom:16px">
-      <div class="chart-header"><div class="chart-title">Satış Cirosu — Yeni vs Yenileme</div><div class="chart-sub">ÖT-G7+G8 · Seçili günler (₺)</div></div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Yeni</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Yenileme</div>
+
+    ${mkSection('TES — Telefon Satış', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('GÖRÜŞME ADEDİ', last(tesGorusme) ? last(tesGorusme).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
+      ${mkCard('GÖRÜŞME SÜRESİ', last(tesSure) ? last(tesSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
+      ${mkCard('SATIŞ YENİ', fmtTL(sum(tesYeni)), 'Toplam dönem', 'up')}
+      ${mkCard('SATIŞ YENİLEME', fmtTL(sum(tesYenileme)), 'Toplam dönem', 'up')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Günlük Görüşme Adedi</div><div class="chart-sub">ÖT-G9</div></div>
+        ${mkChart('c-tes-gorusme', 180)}
       </div>
-      ${mkChart('c-ciro', 220)}
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">TES Satış Cirosu</div><div class="chart-sub">ÖT-G11 + ÖT-G12 · ₺</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Yeni</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ffa94d"></div>Yenileme</div>
+        </div>
+        ${mkChart('c-tes-ciro', 180)}
+      </div>
+    </div>
+
+    ${mkSection('SAD — Saha Arama & Demo', '#ffa94d')}
+    <div class="cards-grid">
+      ${mkCard('GÖRÜŞÜLEN FİRMA', last(sadFirma) ? last(sadFirma).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
+      ${mkCard('GÖRÜŞME SÜRESİ', last(sadSure) ? last(sadSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
+      ${mkCard('RANDEVU ADEDİ', last(sadRandevu) ? last(sadRandevu).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
+      ${mkCard('TOPLAM FİRMA', sadFirma.length ? sum(sadFirma).toLocaleString('tr') : '—', 'Dönem toplamı', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Günlük Görüşülen Firma</div><div class="chart-sub">ÖT-G13</div></div>
+        ${mkChart('c-sad-firma', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Günlük Randevu Adedi</div><div class="chart-sub">ÖT-G15</div></div>
+        ${mkChart('c-sad-randevu', 180)}
+      </div>
+    </div>
+
+    ${mkSection('MOS — Mobil Saha', '#ff6b6b')}
+    <div class="cards-grid">
+      ${mkCard('ZİYARET ADEDİ', last(mosZiyaret) ? last(mosZiyaret).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
+      ${mkCard('ZİYARET SÜRESİ', last(mosSure) ? last(mosSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
+      ${mkCard('SATIŞ YENİ', fmtTL(sum(mosYeni)), 'Toplam dönem', 'up')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">MOS Günlük Ziyaret</div><div class="chart-sub">ÖT-G16</div></div>
+        ${mkChart('c-mos-visit', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">MOS Satış Cirosu (Yeni)</div><div class="chart-sub">ÖT-G18 · ₺</div></div>
+        ${mkChart('c-mos-ciro', 180)}
+      </div>
     </div>
   `;
 
-  if (ot1) {
-    const cols = ot1.slice(6,34).map(parseNum).filter((_,i)=>i<28);
-    const lbl = Array.from({length:cols.length},(_,i)=>`G${i+1}`);
-    barChart('c-sas-visit', lbl, [{ data: cols, backgroundColor: 'rgba(108,99,255,0.65)' }]);
-  }
-  if (ot9) {
-    const cols = ot9.slice(6,34).map(parseNum).filter((_,i)=>i<28);
-    const lbl = Array.from({length:cols.length},(_,i)=>`G${i+1}`);
-    lineChart('c-tes', lbl, [{ data: cols, borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.07)' }]);
-  }
-  if (ot7 && ot8) {
-    const lbl = ['2Mar','5Mar','9Mar','11Mar','13Mar','17Mar','19Mar','24Mar','26Mar','30Mar'];
-    const yeni = [117810,100000,156000,140000,0,1003000,0,350000,105000,85000];
-    const yen  = [0,570000,0,1016040,4065984,1458564,0,0,252000,870000];
-    const el = document.getElementById('c-ciro');
+  // SAS charts
+  if (sasZiyaret.length) barChart('c-sas-visit', glbl(sasZiyaret), [{ data: sasZiyaret, backgroundColor: 'rgba(108,99,255,0.65)' }]);
+  if (sasYeni.length || sasYenileme.length) {
+    const len = Math.max(sasYeni.length, sasYenileme.length);
+    const el = document.getElementById('c-sas-ciro');
     if (el) new Chart(el, {
       type: 'bar',
-      data: { labels: lbl, datasets: [
-        { label: 'Yeni', data: yeni, backgroundColor: 'rgba(108,99,255,0.7)' },
-        { label: 'Yenileme', data: yen, backgroundColor: 'rgba(0,212,170,0.65)' }
+      data: { labels: glbl({length:len}), datasets: [
+        { label: 'Yeni', data: sasYeni, backgroundColor: 'rgba(108,99,255,0.7)' },
+        { label: 'Yenileme', data: sasYenileme, backgroundColor: 'rgba(0,212,170,0.65)' }
       ]},
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { stacked: false, ticks: { maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => (v/1e6).toFixed(1)+'M' } }
-        }
-      }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxRotation: 0 } },
+                  y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => fmtTL(v) } } } }
     });
   }
+
+  // TES charts
+  if (tesGorusme.length) lineChart('c-tes-gorusme', glbl(tesGorusme), [{ data: tesGorusme, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
+  if (tesYeni.length || tesYenileme.length) {
+    const len = Math.max(tesYeni.length, tesYenileme.length);
+    const el = document.getElementById('c-tes-ciro');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: glbl({length:len}), datasets: [
+        { label: 'Yeni', data: tesYeni, backgroundColor: 'rgba(0,212,170,0.7)' },
+        { label: 'Yenileme', data: tesYenileme, backgroundColor: 'rgba(255,169,77,0.65)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+                  y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => fmtTL(v) } } } }
+    });
+  }
+
+  // SAD charts
+  if (sadFirma.length)   barChart('c-sad-firma',   glbl(sadFirma),   [{ data: sadFirma,   backgroundColor: 'rgba(255,169,77,0.65)' }]);
+  if (sadRandevu.length) barChart('c-sad-randevu', glbl(sadRandevu), [{ data: sadRandevu, backgroundColor: 'rgba(255,169,77,0.45)' }]);
+
+  // MOS charts
+  if (mosZiyaret.length) barChart('c-mos-visit', glbl(mosZiyaret), [{ data: mosZiyaret, backgroundColor: 'rgba(255,107,107,0.65)' }]);
+  if (mosYeni.length)    barChart('c-mos-ciro',  glbl(mosYeni),    [{ data: mosYeni,    backgroundColor: 'rgba(255,107,107,0.5)' }]);
 }
 
 function renderCagri(rows) {
@@ -680,15 +860,30 @@ function renderFirma(rows) {
       ${mkChart('c-renk-trend', 180)}
     </div>
   `;
-  lineChart('c-yesil-trend', WEEKS,
-    [{ data: [57.35,59.59,58.56,60.50,60.01,60.53], borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
+  const fi6r = findRow(rows, 'Fİ-H6');
+  const yesilTrend = fi6r ? fi6r.slice(6).map(v => {
+    const s = String(v||'').replace('%','').replace(',','.').trim();
+    const n = parseFloat(s);
+    if (isNaN(n)) return null;
+    return n > 1 ? n : n * 100;
+  }).filter(v => v !== null) : [57.35,59.59,58.56,60.50,60.01,60.53];
+
+  lineChart('c-yesil-trend', WEEKS.slice(0, yesilTrend.length),
+    [{ data: yesilTrend, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
   barChart('c-flags',
     ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
     [{ data: [1511,672,881,574,432,520,620], backgroundColor: ['#6c63ff','#ff6b6b','#ffa94d','#00d4aa','#51cf66','#e8590c','#cc5de8'].map(c=>c+'bb') }]);
-  lineChart('c-renk-trend', WEEKS, [
-    { data: [1362,1417,1372,1420,1427,1440], borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
-    { data: [624,582,591,564,554,555], borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
-    { data: [156,146,158,150,155,141], borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
+  const fi1r = findRow(rows,'Fİ-H1');
+  const fi2r = findRow(rows,'Fİ-H2');
+  const fi4r = findRow(rows,'Fİ-H4');
+  const yesilD = fi1r ? getNumericValues(fi1r) : [1362,1417,1372,1420,1427,1440];
+  const sariD  = fi2r ? getNumericValues(fi2r) : [624,582,591,564,554,555];
+  const kirmD  = fi4r ? getNumericValues(fi4r) : [156,146,158,150,155,141];
+  const renkLen = Math.max(yesilD.length, sariD.length, kirmD.length);
+  lineChart('c-renk-trend', WEEKS.slice(0, renkLen), [
+    { data: yesilD, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
+    { data: sariD,  borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
+    { data: kirmD,  borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
   ]);
 }
 
@@ -736,7 +931,430 @@ function renderIK(rows) {
   `;
 }
 
-// ─── MAIN LOAD ────────────────────────────────────────────
+function renderFinans(rows) {
+  // EP — Tahsilat (Finans)
+  const ep1 = findRow(rows,'EP-G1'); // Tahsilat görüşülebilen
+  const ep2 = findRow(rows,'EP-G2'); // Tahsilat toplam
+  const ep3 = findRow(rows,'EP-G3'); // Saha/TES finans cevaplama
+  const ep4 = findRow(rows,'EP-G4'); // WA takip
+  const ep5 = findRow(rows,'EP-G5'); // Çek/Senet/Havale
+  const epA2 = findRow(rows,'EP-A2');
+  const epA4 = findRow(rows,'EP-A4');
+  const epA7 = findRow(rows,'EP-A7');
+  const epA11 = findRow(rows,'EP-A11');
+
+  // ŞY — Muhasebe
+  const syA1 = findRow(rows,'ŞY-A1');
+  const syA2 = findRow(rows,'ŞY-A2');
+  const syA6 = findRow(rows,'ŞY-A6');
+  const syA8 = findRow(rows,'ŞY-A8');
+  const syA9 = findRow(rows,'ŞY-A9');
+
+  // HÇ — Muhasebe
+  const hcA1 = findRow(rows,'HÇ-A1');
+  const hcA2 = findRow(rows,'HÇ-A2');
+  const hcA3 = findRow(rows,'HÇ-A3');
+
+  // BG — İK
+  const bgA1 = findRow(rows,'BG-A1');
+  const bgA2 = findRow(rows,'BG-A2');
+  const bgA3 = findRow(rows,'BG-A3');
+  const bgA4 = findRow(rows,'BG-A4');
+  const bgA5 = findRow(rows,'BG-A5');
+  const bgA6 = findRow(rows,'BG-A6');
+  const bgA7 = findRow(rows,'BG-A7');
+  const bgA8 = findRow(rows,'BG-A8');
+
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? '%'+v : '—'; };
+
+  // Günlük tahsilat verileri
+  const ep1d = ep1 ? getNumericValues(ep1).filter(v=>v>0) : [];
+  const ep2d = ep2 ? getNumericValues(ep2).filter(v=>v>0) : [];
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`G${i+1}`);
+
+  document.getElementById('finans-content').innerHTML = `
+
+    ${mkSection('Tahsilat & Finans', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('TAHSİLAT GÖRÜŞÜLEN', g(ep1), 'Son veri', 'neutral')}
+      ${mkCard('TAHSİLAT TOPLAM', g(ep2), 'Son veri', 'neutral')}
+      ${mkCard('SAHA/TES FİNANS KARŞ.', g(ep3), 'Son veri', 'neutral')}
+      ${mkCard('WA TAKİP GÖRÜŞME', g(ep4), 'Son veri', 'neutral')}
+      ${mkCard('ÇEK/SENET/HAVALE', g(ep5), 'Son veri', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Tahsilat Araması — Görüşülebilen vs Toplam</div><div class="chart-sub">EP-G1 + EP-G2 · Günlük</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Görüşülebilen</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Toplam</div>
+        </div>
+        ${mkChart('c-ep-tahsilat', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Aylık Finans Özeti</div><div class="chart-sub">EP Aylık metrikler</div></div>
+        ${mkChart('c-ep-aylik', 200)}
+      </div>
+    </div>
+
+    ${mkSection('Muhasebe', '#ffa94d')}
+    <div class="cards-grid">
+      ${mkCard('BANKA İŞLEMLERİ', g(syA1), 'Mart 2026', 'neutral')}
+      ${mkCard('HARCAMA FİŞİ', g(syA2), 'Mart 2026', 'neutral')}
+      ${mkCard('KK POS GEÇİŞ', g(syA6), 'Mart 2026', 'neutral')}
+      ${mkCard('OTOMATİK FATURA', g(syA9), 'Mart 2026', 'neutral')}
+      ${mkCard('REKLAM/BARTER FATURA', g(syA8), 'Mart 2026', 'neutral')}
+    </div>
+    <div class="table-card">
+      <div class="table-title">Muhasebe Detay — Mart 2026</div>
+      <table>
+        <thead><tr><th>Metrik</th><th>Değer</th><th>Sorumlu</th></tr></thead>
+        <tbody>
+          <tr><td>Banka İşlemleri</td><td>${g(syA1)}</td><td>ŞENNUR YÜKSEL</td></tr>
+          <tr><td>Harcama Fişi</td><td>${g(syA2)}</td><td>ŞENNUR YÜKSEL</td></tr>
+          <tr><td>KK POS Geçiş</td><td>${g(syA6)}</td><td>ŞENNUR YÜKSEL</td></tr>
+          <tr><td>Otomatik Fatura</td><td>${g(syA9)}</td><td>ŞENNUR YÜKSEL</td></tr>
+          <tr><td>Reklam/Barter Fatura</td><td>${g(syA8)}</td><td>ŞENNUR YÜKSEL</td></tr>
+          <tr><td>KDV Beyanname Kontrol</td><td>${g(hcA1)}</td><td>HÜSEYİN ÇORUM</td></tr>
+          <tr><td>Alış Faturası (Günlük)</td><td>${g(hcA2)}</td><td>HÜSEYİN ÇORUM</td></tr>
+          <tr><td>Kredi Kartı İşlemleri</td><td>${g(hcA3)}</td><td>HÜSEYİN ÇORUM</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${mkSection('İnsan Kaynakları', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('TOPLAM ÇALIŞAN', g(bgA8), 'Mart 2026', 'neutral')}
+      ${mkCard('AYLIK İŞE ALIM', g(bgA1), 'Mart 2026', 'neutral')}
+      ${mkCard('AÇIK POZİSYON', g(bgA2), 'Mart 2026', 'neutral')}
+      ${mkCard('GÖRÜŞME SAYISI', g(bgA3), 'Mart 2026', 'neutral')}
+      ${mkCard('TEKLİF KABUL', gPct(bgA5), '↑ Yüksek', 'up')}
+      ${mkCard('RETENTION (3 AY)', gPct(bgA6), '↑ Mükemmel', 'up')}
+      ${mkCard('TURNOVER RATE', gPct(bgA7), '↓ Düşük (iyi)', 'up')}
+      ${mkCard('ORT. KAPANMA', g(bgA4)+' gün', 'Mart 2026', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">İK Oranları</div><div class="chart-sub">Teklif kabul / Retention / Turnover</div></div>
+        ${mkChart('c-ik-oranlar', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">İK Sayısal Özet</div><div class="chart-sub">İşe alım / Açık pozisyon / Görüşme</div></div>
+        ${mkChart('c-ik-sayisal', 200)}
+      </div>
+    </div>
+  `;
+
+  // Tahsilat chart
+  if (ep1d.length || ep2d.length) {
+    const len = Math.max(ep1d.length, ep2d.length);
+    const el = document.getElementById('c-ep-tahsilat');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: glbl({length:len}), datasets: [
+        { label: 'Görüşülebilen', data: ep1d, backgroundColor: 'rgba(108,99,255,0.7)' },
+        { label: 'Toplam', data: ep2d, backgroundColor: 'rgba(255,107,107,0.5)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+
+  // Aylık finans chart
+  const epAylikLabels = ['Tahsilat Görüşülen','Ödeme Planı Rev.','CRM Havale','Erken Yenileme','Saha/TES Cevaplama'];
+  const epAylikData = [
+    epA2 ? getLastNonEmpty(epA2)||0 : 0,
+    epA4 ? getLastNonEmpty(epA4)||0 : 0,
+    epA7 ? getLastNonEmpty(epA7)||0 : 0,
+    findRow(rows,'EP-A8') ? getLastNonEmpty(findRow(rows,'EP-A8'))||0 : 0,
+    findRow(rows,'EP-A9') ? getLastNonEmpty(findRow(rows,'EP-A9'))||0 : 0
+  ];
+  const el2 = document.getElementById('c-ep-aylik');
+  if (el2) new Chart(el2, {
+    type: 'bar',
+    data: { labels: epAylikLabels, datasets: [{ data: epAylikData, backgroundColor: ['rgba(108,99,255,0.7)','rgba(0,212,170,0.7)','rgba(255,169,77,0.7)','rgba(255,107,107,0.6)','rgba(81,207,102,0.7)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 10 } } } } }
+  });
+
+  // İK oranlar chart
+  const el3 = document.getElementById('c-ik-oranlar');
+  const bgA5v = bgA5 ? getLastNonEmpty(bgA5)||0 : 92;
+  const bgA6v = bgA6 ? getLastNonEmpty(bgA6)||0 : 100;
+  const bgA7v = bgA7 ? getLastNonEmpty(bgA7)||0 : 1.25;
+  if (el3) new Chart(el3, {
+    type: 'bar',
+    data: { labels: ['Teklif Kabul %', 'Retention 3 Ay %', 'Turnover %'],
+      datasets: [{ data: [bgA5v, bgA6v, bgA7v], backgroundColor: ['rgba(0,212,170,0.7)','rgba(108,99,255,0.7)','rgba(255,107,107,0.6)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, max: 110 } } }
+  });
+
+  // İK sayısal chart
+  const el4 = document.getElementById('c-ik-sayisal');
+  const bgA1v = bgA1 ? getLastNonEmpty(bgA1)||0 : 12;
+  const bgA2v = bgA2 ? getLastNonEmpty(bgA2)||0 : 12;
+  const bgA3v = bgA3 ? getLastNonEmpty(bgA3)||0 : 89;
+  if (el4) new Chart(el4, {
+    type: 'bar',
+    data: { labels: ['İşe Alım', 'Açık Pozisyon', 'Görüşme Sayısı'],
+      datasets: [{ data: [bgA1v, bgA2v, bgA3v], backgroundColor: ['rgba(0,212,170,0.7)','rgba(255,169,77,0.6)','rgba(108,99,255,0.7)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+}
+
+function renderSEO(rows) {
+  const tkA1 = findRow(rows,'TK-A1');
+  const tkA2 = findRow(rows,'TK-A2');
+  const tkA3 = findRow(rows,'TK-A3');
+  const tkA4 = findRow(rows,'TK-A4');
+  const tkA5 = findRow(rows,'TK-A5');
+
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const tkA1d = tkA1 ? getNumericValues(tkA1).filter(v=>v>0) : [];
+  const tkA2d = tkA2 ? getNumericValues(tkA2).filter(v=>v>0) : [];
+  const tkA3d = tkA3 ? getNumericValues(tkA3).filter(v=>v>0) : [];
+  const tkA4d = tkA4 ? getNumericValues(tkA4).filter(v=>v>0) : [];
+  const tkA5d = tkA5 ? getNumericValues(tkA5).filter(v=>v>0) : [];
+  const glbl  = arr => Array.from({length:arr.length},(_,i)=>`A${i+1}`);
+
+  const convRate = (tkA2d.length && tkA3d.length) ? (() => {
+    const c = tkA2d[tkA2d.length-1]; const n = tkA3d[tkA3d.length-1];
+    return ((c/(c+n))*100).toFixed(1)+'%';
+  })() : '—';
+
+  document.getElementById('seo-content').innerHTML = `
+    ${mkSection('Organik Trafik', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('ORGANİK LEAD', g(tkA1), 'Son dönem', 'neutral')}
+      ${mkCard('CONVERTİBLE SESSION', g(tkA2), 'Son dönem', 'neutral')}
+      ${mkCard('NON-CONVERTİBLE SESSION', g(tkA3), 'Son dönem', 'neutral')}
+      ${mkCard('SESSION CONV. ORANI', convRate, 'Convertible / Toplam', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Organik Lead Trendi</div><div class="chart-sub">TK-A1 · Aylık</div></div>
+        ${mkChart('c-tk-lead', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Session Dağılımı</div><div class="chart-sub">Convertible vs Non-Convertible</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Convertible</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Non-Convertible</div>
+        </div>
+        ${mkChart('c-tk-session', 200)}
+      </div>
+    </div>
+
+    ${mkSection('Anahtar Kelime Pozisyonları', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('MONEY KEYWORDS AVG POS.', g(tkA4), 'Düşük = Daha İyi', 'neutral')}
+      ${mkCard('GELİNLİK MONEY KW AVG POS.', g(tkA5), 'Düşük = Daha İyi', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Money Keywords Pozisyon</div><div class="chart-sub">TK-A4 · Y ekseni ters — düşük daha iyi</div></div>
+        ${mkChart('c-tk-kw', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Gelinlik Money Keywords</div><div class="chart-sub">TK-A5 · Y ekseni ters — düşük daha iyi</div></div>
+        ${mkChart('c-tk-gkw', 200)}
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">SEO Metrik Özeti — TUĞÇE KARACA</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Son Değer</th><th>Durum</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">TK-A1</td><td>Organic Lead</td><td>${g(tkA1)}</td><td><span class="badge ${tkA1d.length?'badge-green':'badge-amber'}">${tkA1d.length?'Veri Var':'Bekleniyor'}</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">TK-A2</td><td>Convertible Organik Sessions</td><td>${g(tkA2)}</td><td><span class="badge ${tkA2d.length?'badge-green':'badge-amber'}">${tkA2d.length?'Veri Var':'Bekleniyor'}</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">TK-A3</td><td>Nonconvertible Organik Sessions</td><td>${g(tkA3)}</td><td><span class="badge ${tkA3d.length?'badge-green':'badge-amber'}">${tkA3d.length?'Veri Var':'Bekleniyor'}</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">TK-A4</td><td>Money Keywords Avg. Position</td><td>${g(tkA4)}</td><td><span class="badge ${tkA4d.length?'badge-green':'badge-amber'}">${tkA4d.length?'Veri Var':'Bekleniyor'}</span></td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">TK-A5</td><td>Gelinlik Money Keywords Avg. Pos.</td><td>${g(tkA5)}</td><td><span class="badge ${tkA5d.length?'badge-green':'badge-amber'}">${tkA5d.length?'Veri Var':'Bekleniyor'}</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (tkA1d.length) lineChart('c-tk-lead', glbl(tkA1d),
+    [{ data: tkA1d, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
+
+  if (tkA2d.length || tkA3d.length) {
+    const len = Math.max(tkA2d.length, tkA3d.length);
+    const el = document.getElementById('c-tk-session');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: glbl({length:len}), datasets: [
+        { label: 'Convertible', data: tkA2d, backgroundColor: 'rgba(108,99,255,0.7)' },
+        { label: 'Non-Convertible', data: tkA3d, backgroundColor: 'rgba(255,107,107,0.6)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+
+  ['c-tk-kw','c-tk-gkw'].forEach((id, i) => {
+    const d = i === 0 ? tkA4d : tkA5d;
+    const col = i === 0 ? '#00d4aa' : '#ffa94d';
+    if (!d.length) return;
+    const el = document.getElementById(id);
+    if (el) new Chart(el, {
+      type: 'line',
+      data: { labels: glbl(d), datasets: [{ data: d, borderColor: col, backgroundColor: col.replace(')',',0.07)').replace('rgb','rgba'), tension: 0.3, fill: true, pointRadius: 4 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { reverse: true, grid: { color: 'rgba(255,255,255,0.04)' }, title: { display: true, text: '← Daha İyi', color: '#7a7a8a', font: { size: 10 } } } } }
+    });
+  });
+}
+
+function renderDijital(rows) {
+  const usH1 = findRow(rows,'US-H1');
+  const usH2 = findRow(rows,'US-H2');
+  const usH3 = findRow(rows,'US-H3');
+  const usA1 = findRow(rows,'US-A1');
+  const usA2 = findRow(rows,'US-A2');
+  const udA1 = findRow(rows,'UD-A1');
+  const udA2 = findRow(rows,'UD-A2');
+  const udA3 = findRow(rows,'UD-A3');
+  const udA4 = findRow(rows,'UD-A4');
+  const udA5 = findRow(rows,'UD-A5');
+  const udA6 = findRow(rows,'UD-A6');
+
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+
+  const usH1d = usH1 ? usH1.slice(6).map(v => {
+    const s = String(v||'').replace(/\./g,'').replace(',','.').trim();
+    const n = parseFloat(s); return isNaN(n)||n<=0 ? null : n;
+  }).filter(v=>v!==null) : [];
+
+  const usH2d = usH2 ? usH2.slice(6).map(v => {
+    const s = String(v||'').replace('%','').replace(/\./g,'').replace(',','.').trim();
+    const n = parseFloat(s); return isNaN(n)||n<=0 ? null : n;
+  }).filter(v=>v!==null) : [];
+
+  const usH3d = usH3 ? usH3.slice(6).map(v => {
+    const s = String(v||'').replace(/\./g,'').replace(',','.').trim();
+    const n = parseFloat(s); return isNaN(n)||n<=0 ? null : n;
+  }).filter(v=>v!==null) : [];
+
+  const lastH1 = usH1d.length ? usH1d[usH1d.length-1] : null;
+  const lastH2 = usH2d.length ? usH2d[usH2d.length-1] : null;
+  const lastH3 = usH3d.length ? usH3d[usH3d.length-1] : null;
+  const prevH2 = usH2d.length >= 2 ? usH2d[usH2d.length-2] : null;
+
+  document.getElementById('dijital-content').innerHTML = `
+
+    ${mkSection('Lead & Conversion — UMUT SEYARCI', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('TOTAL LEAD', lastH1 ? lastH1.toLocaleString('tr') : '—', 'Son hafta', 'neutral')}
+      ${mkCard('CONVERSION RATE', lastH2 ? lastH2.toFixed(1)+'%' : '—', prevH2 !== null ? (lastH2 > prevH2 ? '↑ Artış' : '↓ Düşüş') : '', prevH2 !== null ? (lastH2 > prevH2 ? 'up' : 'down') : 'neutral')}
+      ${mkCard('LEAD PER COUPLE', lastH3 ? lastH3.toFixed(2) : '—', 'Son hafta', 'neutral')}
+      ${mkCard('FİNALİZE PROJE', g(usA1), 'Aylık', 'neutral')}
+      ${mkCard('BEKLENEN ETKİ', g(usA2), 'Aylık TL', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Haftalık Total Lead Trendi</div><div class="chart-sub">US-H1</div></div>
+        ${mkChart('c-us-lead', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Conversion Rate Trendi</div><div class="chart-sub">US-H2 · Haftalık %</div></div>
+        ${mkChart('c-us-conv', 200)}
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Lead per Couple Trendi</div><div class="chart-sub">US-H3 · Haftalık</div></div>
+        ${mkChart('c-us-lpc', 180)}
+      </div>
+      <div class="chart-card" style="display:flex;align-items:center;justify-content:center;">
+        <div style="text-align:center;padding:20px">
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">AYLIK FİNALİZE PROJE</div>
+          <div style="font-size:48px;font-weight:600;letter-spacing:-2px;color:var(--text)">${g(usA1)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">US-A1 · Mart 2026</div>
+        </div>
+      </div>
+    </div>
+
+    ${mkSection('Paid & Performance — UMUT DUMAN', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('PAID LEAD', g(udA1), 'Aylık', 'neutral')}
+      ${mkCard('PAID SESSION', g(udA2), 'Aylık', 'neutral')}
+      ${mkCard('REVID', g(udA3), 'Aylık', 'neutral')}
+      ${mkCard('APP DOWNLOAD', g(udA4), 'Aylık', 'neutral')}
+      ${mkCard('APP LEAD', g(udA5), 'Aylık', 'neutral')}
+      ${mkCard('COST PER LEAD', g(udA6), 'Aylık ₺', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Paid Lead vs App Lead</div><div class="chart-sub">UD-A1 + UD-A5</div></div>
+        ${mkChart('c-ud-leads', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">App Download vs Session</div><div class="chart-sub">UD-A4 + UD-A2</div></div>
+        ${mkChart('c-ud-app', 200)}
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">Dijital Büyüme Metrik Özeti</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Sorumlu</th><th>Son Değer</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">US-H1</td><td>Total Lead</td><td>UMUT SEYARCI</td><td>${lastH1 ? lastH1.toLocaleString('tr') : '—'}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">US-H2</td><td>Quality Session to Couple Conv. Rate</td><td>UMUT SEYARCI</td><td>${lastH2 ? lastH2.toFixed(1)+'%' : '—'}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">US-H3</td><td>Lead per Couple</td><td>UMUT SEYARCI</td><td>${lastH3 ? lastH3.toFixed(2) : '—'}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">US-A1</td><td>Finalize Edilen Proje & Test</td><td>UMUT SEYARCI</td><td>${g(usA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">UD-A1</td><td>Paid Lead</td><td>UMUT DUMAN</td><td>${g(udA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">UD-A2</td><td>Paid Session</td><td>UMUT DUMAN</td><td>${g(udA2)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">UD-A4</td><td>App Download</td><td>UMUT DUMAN</td><td>${g(udA4)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">UD-A5</td><td>App Lead</td><td>UMUT DUMAN</td><td>${g(udA5)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (usH1d.length) lineChart('c-us-lead', glbl(usH1d),
+    [{ data: usH1d, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
+
+  if (usH2d.length) lineChart('c-us-conv', glbl(usH2d),
+    [{ data: usH2d, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
+
+  if (usH3d.length) lineChart('c-us-lpc', glbl(usH3d),
+    [{ data: usH3d, borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.07)' }]);
+
+  // Paid Lead vs App Lead
+  const udA1v = udA1 ? getLastNonEmpty(udA1)||0 : 0;
+  const udA5v = udA5 ? getLastNonEmpty(udA5)||0 : 0;
+  const el1 = document.getElementById('c-ud-leads');
+  if (el1) new Chart(el1, {
+    type: 'bar',
+    data: { labels: ['Paid Lead', 'App Lead'],
+      datasets: [{ data: [udA1v, udA5v], backgroundColor: ['rgba(0,212,170,0.7)','rgba(108,99,255,0.7)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } } } }
+  });
+
+  // App Download vs Session
+  const udA4v = udA4 ? getLastNonEmpty(udA4)||0 : 0;
+  const udA2v = udA2 ? getLastNonEmpty(udA2)||0 : 0;
+  const el2 = document.getElementById('c-ud-app');
+  if (el2) new Chart(el2, {
+    type: 'bar',
+    data: { labels: ['App Download', 'Paid Session'],
+      datasets: [{ data: [udA4v, udA2v], backgroundColor: ['rgba(255,169,77,0.7)','rgba(255,107,107,0.6)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { callback: v => v >= 1000 ? (v/1000).toFixed(0)+'K' : v } } } }
+  });
+}
+
 async function loadData() {
   try {
     const rows = await fetchSheetData();
@@ -746,6 +1364,9 @@ async function loadData() {
     renderCagri(rows);
     renderFirma(rows);
     renderIK(rows);
+    renderFinans(rows);
+    renderSEO(rows);
+    renderDijital(rows);
   } catch (e) {
     document.getElementById('last-update').textContent = 'Bağlantı hatası — statik veri';
     renderGenel([]);
@@ -753,6 +1374,9 @@ async function loadData() {
     renderCagri([]);
     renderFirma([]);
     renderIK([]);
+    renderFinans([]);
+    renderSEO([]);
+    renderDijital([]);
   }
 }
 
