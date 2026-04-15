@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DMETRIX Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0f0f11;
+    --bg2: #161619;
+    --bg3: #1e1e23;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #f0f0f2;
+    --muted: #7a7a8a;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --accent3: #ff6b6b;
+    --accent4: #ffa94d;
+    --green: #51cf66;
+    --red: #ff6b6b;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* TOPBAR */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 32px; border-bottom: 1px solid var(--border);
+    background: var(--bg2); position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #fff;
+  }
+  .logo-text { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-family: var(--mono); color: var(--accent2);
+    background: rgba(0,212,170,0.1); padding: 4px 10px; border-radius: 20px;
+    border: 1px solid rgba(0,212,170,0.2);
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .last-update { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+  /* LAYOUT */
+  .layout { display: flex; min-height: calc(100vh - 65px); }
+  .sidebar {
+    width: 200px; flex-shrink: 0; background: var(--bg2);
+    border-right: 1px solid var(--border); padding: 24px 12px;
+    position: sticky; top: 65px; height: calc(100vh - 65px); overflow-y: auto;
+  }
+  .sidebar-label { font-size: 10px; font-family: var(--mono); color: var(--muted); letter-spacing: 1px; text-transform: uppercase; padding: 0 12px; margin-bottom: 8px; margin-top: 20px; }
+  .sidebar-label:first-child { margin-top: 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--muted);
+    transition: all 0.15s; border: 1px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--bg3); }
+  .nav-item.active { color: var(--text); background: var(--bg3); border-color: var(--border2); }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.7; }
+
+  /* MAIN */
+  .main { flex: 1; padding: 28px 32px; overflow-x: hidden; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* PAGE HEADER */
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .page-desc { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* LOADING */
+  .loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 400px; gap: 16px;
+  }
+  .spinner {
+    width: 36px; height: 36px; border: 2px solid var(--border2);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: var(--muted); font-family: var(--mono); }
+
+  /* ERROR */
+  .error-box {
+    background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2);
+    border-radius: 12px; padding: 20px 24px; margin-bottom: 24px;
+  }
+  .error-title { font-size: 14px; font-weight: 500; color: var(--red); margin-bottom: 6px; }
+  .error-msg { font-size: 13px; color: var(--muted); }
+  .error-msg code { font-family: var(--mono); background: var(--bg3); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  /* SETUP BOX */
+  .setup-box {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 32px; max-width: 600px; margin: 40px auto;
+  }
+  .setup-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .setup-desc { font-size: 13px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .setup-field label { font-size: 12px; color: var(--muted); font-family: var(--mono); display: block; margin-bottom: 8px; }
+  .setup-field input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: var(--mono);
+    font-size: 13px; outline: none; transition: border-color 0.15s;
+  }
+  .setup-field input:focus { border-color: var(--accent); }
+  .setup-btn {
+    margin-top: 20px; width: 100%; padding: 12px;
+    background: var(--accent); color: #fff; border: none; border-radius: 8px;
+    font-family: var(--font); font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .setup-btn:hover { opacity: 0.85; }
+  .setup-steps { margin-top: 24px; }
+  .step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg3); border: 1px solid var(--border2);
+    font-size: 11px; font-family: var(--mono); color: var(--muted);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .step-text { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .step-text strong { color: var(--text); }
+
+  /* METRIC CARDS */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .metric-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
+    transition: border-color 0.15s;
+  }
+  .metric-card:hover { border-color: var(--border2); }
+  .metric-label { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .metric-value { font-size: 26px; font-weight: 600; letter-spacing: -1px; line-height: 1; }
+  .metric-delta { font-size: 12px; margin-top: 6px; }
+  .delta-up { color: var(--green); }
+  .delta-down { color: var(--red); }
+  .delta-neutral { color: var(--muted); }
+
+  /* CHARTS */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .charts-grid.single { grid-template-columns: 1fr; }
+  .chart-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px;
+  }
+  .chart-header { margin-bottom: 16px; }
+  .chart-title { font-size: 13px; font-weight: 500; }
+  .chart-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); margin-top: 3px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+
+  /* TABLE */
+  .table-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; margin-bottom: 16px; overflow-x: auto;
+  }
+  .table-title { font-size: 13px; font-weight: 500; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 12px; color: var(--muted); border-bottom: 1px solid var(--border); font-weight: 400; font-family: var(--mono); font-size: 11px; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* BADGE */
+  .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-family: var(--mono); }
+  .badge-green { background: rgba(81,207,102,0.12); color: #51cf66; }
+  .badge-red { background: rgba(255,107,107,0.12); color: #ff6b6b; }
+  .badge-amber { background: rgba(255,169,77,0.12); color: #ffa94d; }
+  .badge-blue { background: rgba(108,99,255,0.12); color: #6c63ff; }
+
+  /* DIVIDER */
+  .section-title { font-size: 11px; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; margin-top: 28px; }
+  .section-title:first-child { margin-top: 0; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { padding: 20px 16px; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .topbar { padding: 14px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">DM</div>
+    <div>
+      <div class="logo-text">DMETRIX</div>
+      <div class="logo-sub">ADMIN Dashboard</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-badge"><div class="live-dot"></div>CANLI</div>
+    <div class="last-update" id="last-update">—</div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-label">Genel</div>
+    <div class="nav-item active" onclick="goTo('genel')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="1.5"/></svg>
+      Özet
+    </div>
+
+    <div class="sidebar-label">Ekipler</div>
+    <div class="nav-item" onclick="goTo('satis')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Satış & Saha
+    </div>
+    <div class="nav-item" onclick="goTo('cagri')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" stroke-width="1.5"/></svg>
+      Çağrı Merkezi
+    </div>
+    <div class="nav-item" onclick="goTo('firma')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="1.5"/></svg>
+      Firma Sağlığı
+    </div>
+    <div class="nav-item" onclick="goTo('ik')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="1.5"/></svg>
+      İK & Teknik
+    </div>
+
+    <div class="sidebar-label">Ayarlar</div>
+    <div class="nav-item" onclick="goTo('ayarlar')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke-width="1.5"/></svg>
+      Ayarlar
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="main-content">
+
+    <!-- GENEL ÖZET -->
+    <div class="page active" id="page-genel">
+      <div class="page-header">
+        <div class="page-title">Genel Özet</div>
+        <div class="page-desc">Tüm ekiplerin haftalık KPI özeti</div>
+      </div>
+      <div id="genel-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Google Sheets'ten veri çekiliyor...</div></div></div>
+    </div>
+
+    <!-- SATIŞ -->
+    <div class="page" id="page-satis">
+      <div class="page-header">
+        <div class="page-title">Satış & Saha</div>
+        <div class="page-desc">SAS, TES, SAD, MOS metrikleri</div>
+      </div>
+      <div id="satis-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- ÇAĞRI MERKEZİ -->
+    <div class="page" id="page-cagri">
+      <div class="page-header">
+        <div class="page-title">Çağrı Merkezi</div>
+        <div class="page-desc">DİCLE TOKAR · Teklif, Feedback, Üyelik</div>
+      </div>
+      <div id="cagri-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- FİRMA SAĞLIĞI -->
+    <div class="page" id="page-firma">
+      <div class="page-header">
+        <div class="page-title">Firma Sağlığı</div>
+        <div class="page-desc">FULYA İZDAŞ · Health flag analizi</div>
+      </div>
+      <div id="firma-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- İK -->
+    <div class="page" id="page-ik">
+      <div class="page-header">
+        <div class="page-title">İK & Teknik</div>
+        <div class="page-desc">BAŞAK GÜL, DİLEK BIÇAKCI metrikleri</div>
+      </div>
+      <div id="ik-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- AYARLAR -->
+    <div class="page" id="page-ayarlar">
+      <div class="page-header">
+        <div class="page-title">Ayarlar</div>
+        <div class="page-desc">Google Sheets bağlantısını yapılandır</div>
+      </div>
+      <div class="setup-box">
+        <div class="setup-title">Google Sheets Bağlantısı</div>
+        <div class="setup-desc">
+          Dashboard'un canlı veri çekebilmesi için Google Sheets dosyanızın
+          paylaşım ayarlarını güncelleyin ve Sheet ID'yi buraya girin.
+        </div>
+
+        <div class="setup-steps">
+          <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Sheets dosyasını aç</strong> → Sağ üst → Paylaş</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text"><strong>"Bağlantıya sahip olan herkes"</strong> → Görüntüleyici seç → Kaydet</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">URL'den ID'yi kopyala:<br><code style="font-family:var(--mono);font-size:11px;background:var(--bg3);padding:3px 6px;border-radius:4px">docs.google.com/spreadsheets/d/<strong>BU_KISIM</strong>/edit</code></div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">Aşağıya yapıştır ve <strong>Bağlan</strong>'a tıkla</div></div>
+        </div>
+
+        <div class="setup-field" style="margin-top:24px">
+          <label>SHEET ID</label>
+          <input type="text" id="sheet-id-input" placeholder="1z4N7Ct_mfrgGsnzaDEKCW3_iPvkymj0DV7ffo_WzmFo" value="1z4N7Ct_mfrgGsnzaDEKCW3_iPvkymj0DV7ffo_WzmFo">
+        </div>
+        <button class="setup-btn" onclick="saveAndReload()">Bağlan ve Veriyi Yükle</button>
+
+        <div id="setup-status" style="margin-top:14px;font-size:12px;font-family:var(--mono);color:var(--muted);"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─── CONFIG ──────────────────────────────────────────────
+const SHEET_ID = localStorage.getItem('dmetrix_sheet_id') || '1z4N7Ct_mfrgGsnzaDEKCW3_iPvkymj0DV7ffo_WzmFo';
+
+// Chart.js dark defaults
+Chart.defaults.color = '#7a7a8a';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+const WEEKS = ['2-8 Mar','9-15 Mar','16-22 Mar','23-29 Mar','30Mar-5Nis','6-12 Nis'];
+
+// ─── NAVIGATION ──────────────────────────────────────────
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ─── SHEET DATA FETCH ────────────────────────────────────
+async function fetchSheetData(sheetId) {
+  // Google Sheets CSV export — works when sheet is public
+  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`HTTP ${r.status} — Sheet public değil veya ID yanlış`);
+  return await r.text();
+}
+
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n');
+  return lines.map(line => {
+    const cells = []; let cur = ''; let inQ = false;
+    for (let c of line) {
+      if (c === '"') { inQ = !inQ; }
+      else if (c === ',' && !inQ) { cells.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    cells.push(cur.trim());
+    return cells;
+  });
+}
+
+function parseNum(s) {
+  if (!s || s === '-' || s === '') return null;
+  const clean = s.replace(/[₺$%\s.]/g, '').replace(',', '.');
+  const n = parseFloat(clean);
+  return isNaN(n) ? null : n;
+}
+
+// ─── RENDER HELPERS ──────────────────────────────────────
+function mkCard(label, value, delta = '', deltaDir = 'neutral') {
+  return `<div class="metric-card">
+    <div class="metric-label">${label}</div>
+    <div class="metric-value">${value}</div>
+    ${delta ? `<div class="metric-delta delta-${deltaDir}">${delta}</div>` : ''}
+  </div>`;
+}
+
+function mkChart(id, height = 200) {
+  return `<div style="position:relative;height:${height}px"><canvas id="${id}"></canvas></div>`;
+}
+
+function lineChart(id, labels, datasets) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  new Chart(el, {
+    type: 'line',
+    data: { labels, datasets: datasets.map(d => ({ tension: 0.35, fill: true, pointRadius: 4, pointHoverRadius: 6, ...d })) },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxRotation: 30 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+function barChart(id, labels, datasets, opts = {}) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  new Chart(el, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxRotation: 30 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ...opts.y }
+      },
+      ...opts
+    }
+  });
+}
+
+function doughnutChart(id, labels, data, colors) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  new Chart(el, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '68%' }
+  });
+}
+
+// ─── PAGE RENDERERS ──────────────────────────────────────
+function renderGenel(rows) {
+  const weekly = rows.filter(r => r[0] && r[0].startsWith('US-H'));
+  const h1 = rows.find(r => r[0] === 'US-H1');
+  const h2 = rows.find(r => r[0] === 'US-H2');
+  const h3 = rows.find(r => r[0] === 'US-H3');
+  const fi11 = rows.find(r => r[0] === 'Fİ-H11');
+  const fi6 = rows.find(r => r[0] === 'Fİ-H6');
+  const zo1 = rows.find(r => r[0] === 'ZO-H1');
+
+  const leads = h1 ? [h1[6],h1[7],h1[8],h1[9],h1[10]].map(parseNum).filter(Boolean) : [];
+  const convs = h2 ? [h2[6],h2[7],h2[8],h2[9],h2[10]].map(v => parseNum(v?.replace('%','').replace(',','.'))) : [];
+  const lastLead = leads[leads.length-1];
+  const lastConv = convs[convs.length-1];
+  const lastFirma = fi11 ? parseNum(fi11[11]) : null;
+  const lastYesil = fi6 ? parseNum(fi6[11]?.replace('%','').replace(',','.')) : null;
+
+  document.getElementById('genel-content').innerHTML = `
+    <div class="cards-grid">
+      ${mkCard('TOTAL LEAD', lastLead ? lastLead.toLocaleString('tr') : '—', '30 Mar–5 Nis 2026', 'neutral')}
+      ${mkCard('CONVERSION RATE', lastConv ? lastConv.toFixed(1)+'%' : '—', convs.length>=2 ? (lastConv>convs[convs.length-2]?'↑ Artış':'↓ Düşüş') : '', lastConv && convs.length>=2 ? (lastConv>convs[convs.length-2]?'up':'down') : 'neutral')}
+      ${mkCard('LEAD PER COUPLE', h3 ? (h3[10]||'—') : '—', '', 'neutral')}
+      ${mkCard('TOPLAM FİRMA', lastFirma ? lastFirma.toLocaleString('tr') : '—', '6–12 Nis 2026', 'neutral')}
+      ${mkCard('YEŞİL FİRMA', lastYesil ? '%'+lastYesil.toFixed(1) : '—', '↑ Yükseliş trendi', 'up')}
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Haftalık Total Lead</div>
+          <div class="chart-sub">US-H1 · Mart–Nisan 2026</div>
+        </div>
+        ${mkChart('c-lead')}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Conversion Rate Trendi</div>
+          <div class="chart-sub">US-H2 · Haftalık %</div>
+        </div>
+        ${mkChart('c-conv')}
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Firma Sağlık Dağılımı</div>
+          <div class="chart-sub">6–12 Nis 2026</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#51cf66"></div>Yeşil</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ffa94d"></div>Sarı</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Kırmızı</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#e8590c"></div>Turuncu</div>
+        </div>
+        ${mkChart('c-saglik')}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Onboarding & Mezuniyet</div>
+          <div class="chart-sub">ZO-H1, ZO-H2 · Haftalık</div>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Onboarding</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Mezuniyet</div>
+        </div>
+        ${mkChart('c-onboard')}
+      </div>
+    </div>
+  `;
+
+  lineChart('c-lead', WEEKS.slice(0,5),
+    [{ data: leads, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
+  lineChart('c-conv', WEEKS.slice(0,5),
+    [{ data: convs, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
+
+  const fi = {
+    yesil: rows.find(r=>r[0]==='Fİ-H1'), sari: rows.find(r=>r[0]==='Fİ-H2'),
+    turuncu: rows.find(r=>r[0]==='Fİ-H3'), kirmizi: rows.find(r=>r[0]==='Fİ-H4')
+  };
+  doughnutChart('c-saglik',
+    ['Yeşil','Sarı','Turuncu','Kırmızı'],
+    [fi.yesil?parseNum(fi.yesil[11]):0, fi.sari?parseNum(fi.sari[11]):0, fi.turuncu?parseNum(fi.turuncu[11]):0, fi.kirmizi?parseNum(fi.kirmizi[11]):0],
+    ['#51cf66','#ffa94d','#e8590c','#ff6b6b']
+  );
+
+  const zo1r = rows.find(r=>r[0]==='ZO-H1');
+  const zo2r = rows.find(r=>r[0]==='ZO-H2');
+  const zoLabels = WEEKS;
+  const zo1d = zo1r ? [zo1r[6],zo1r[7],zo1r[8],zo1r[9],zo1r[10],zo1r[11]].map(v=>parseNum(v)||0) : [];
+  const zo2d = zo2r ? [zo2r[6],zo2r[7],zo2r[8],zo2r[9],zo2r[10],zo2r[11]].map(v=>parseNum(v)||0) : [];
+  barChart('c-onboard', zoLabels,
+    [{ data: zo1d, backgroundColor: 'rgba(108,99,255,0.7)', label: 'Onboarding' },
+     { data: zo2d, backgroundColor: 'rgba(0,212,170,0.7)', label: 'Mezuniyet' }]);
+}
+
+function renderSatis(rows) {
+  const ot7 = rows.find(r=>r[0]==='ÖT-G7');
+  const ot8 = rows.find(r=>r[0]==='ÖT-G8');
+  const ot9 = rows.find(r=>r[0]==='ÖT-G9');
+  const ot1 = rows.find(r=>r[0]==='ÖT-G1');
+
+  document.getElementById('satis-content').innerHTML = `
+    <div class="cards-grid">
+      ${mkCard('SAS SATIŞ YENİ (Aylık)', '6.6M ₺', 'Mart 2026', 'neutral')}
+      ${mkCard('SAS SATIŞ YENİLEME', '17.2M ₺', 'Mart 2026', 'neutral')}
+      ${mkCard('TES SATIŞ YENİ', '617K ₺', 'Mart 2026', 'neutral')}
+      ${mkCard('SAD GÖRÜŞÜLEN', '1.396', 'Mart 2026', 'neutral')}
+      ${mkCard('SAD RANDEVU', '414', 'Mart 2026', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Günlük SAS Ziyaret</div><div class="chart-sub">ÖT-G1 · Mart 2026</div></div>
+        ${mkChart('c-sas-visit', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">TES Görüşme Adedi</div><div class="chart-sub">ÖT-G9 · Günlük</div></div>
+        ${mkChart('c-tes', 180)}
+      </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-header"><div class="chart-title">Satış Cirosu — Yeni vs Yenileme</div><div class="chart-sub">ÖT-G7+G8 · Seçili günler (₺)</div></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Yeni</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Yenileme</div>
+      </div>
+      ${mkChart('c-ciro', 220)}
+    </div>
+  `;
+
+  if (ot1) {
+    const cols = ot1.slice(6,34).map(parseNum).filter((_,i)=>i<28);
+    const lbl = Array.from({length:cols.length},(_,i)=>`G${i+1}`);
+    barChart('c-sas-visit', lbl, [{ data: cols, backgroundColor: 'rgba(108,99,255,0.65)' }]);
+  }
+  if (ot9) {
+    const cols = ot9.slice(6,34).map(parseNum).filter((_,i)=>i<28);
+    const lbl = Array.from({length:cols.length},(_,i)=>`G${i+1}`);
+    lineChart('c-tes', lbl, [{ data: cols, borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.07)' }]);
+  }
+  if (ot7 && ot8) {
+    const lbl = ['2Mar','5Mar','9Mar','11Mar','13Mar','17Mar','19Mar','24Mar','26Mar','30Mar'];
+    const yeni = [117810,100000,156000,140000,0,1003000,0,350000,105000,85000];
+    const yen  = [0,570000,0,1016040,4065984,1458564,0,0,252000,870000];
+    const el = document.getElementById('c-ciro');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: lbl, datasets: [
+        { label: 'Yeni', data: yeni, backgroundColor: 'rgba(108,99,255,0.7)' },
+        { label: 'Yenileme', data: yen, backgroundColor: 'rgba(0,212,170,0.65)' }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { stacked: false, ticks: { maxRotation: 45 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => (v/1e6).toFixed(1)+'M' } }
+        }
+      }
+    });
+  }
+}
+
+function renderCagri(rows) {
+  document.getElementById('cagri-content').innerHTML = `
+    <div class="cards-grid">
+      ${mkCard('ÇIKARILAN TEKLİF', '8.290', '30 Mar–5 Nis', 'neutral')}
+      ${mkCard('YENİ ÜYELİK KARŞILAMA', '1.511', '30 Mar–5 Nis', 'neutral')}
+      ${mkCard('FEEDBACK ALINAN ÇİFT', '1.022', '30 Mar–5 Nis', 'neutral')}
+      ${mkCard('ÜYE YAPMA ORANI', '%92', '↑ İyi', 'up')}
+      ${mkCard('TEKLİF VERİMLİLİK', '%80.4', '↑ Yükseliş', 'up')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Haftalık Çıkarılan Teklif</div><div class="chart-sub">DT-H19</div></div>
+        ${mkChart('c-teklif')}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Verimlilik Karşılaştırması</div><div class="chart-sub">DT-H4 & DT-H15 · Haftalık %</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Üye Yapma</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Teklif Verimlilik</div>
+        </div>
+        ${mkChart('c-verimlilik')}
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Çağrı Merkezi Haftalık Özet</div>
+      <table>
+        <thead><tr><th>Metrik</th><th>2-8 Mar</th><th>9-15 Mar</th><th>16-22 Mar</th><th>23-29 Mar</th><th>30Mar-5Nis</th></tr></thead>
+        <tbody>
+          <tr><td>Çıkarılan Teklif</td><td>6.583</td><td>6.366</td><td>3.813</td><td>8.100</td><td>8.290</td></tr>
+          <tr><td>Yeni Üyelik Çağrısı</td><td>1.442</td><td>1.371</td><td>542</td><td>2.136</td><td>1.982</td></tr>
+          <tr><td>Üye Sayısı</td><td>1.095</td><td>971</td><td>417</td><td>1.549</td><td>1.511</td></tr>
+          <tr><td>Üye Yapma Oranı</td><td><span class="badge badge-blue">%91.4</span></td><td><span class="badge badge-amber">%88.3</span></td><td><span class="badge badge-green">%94</span></td><td><span class="badge badge-amber">%88</span></td><td><span class="badge badge-green">%92</span></td></tr>
+          <tr><td>Feedback Alınan Çift</td><td>1.011</td><td>1.054</td><td>707</td><td>1.017</td><td>1.022</td></tr>
+          <tr><td>Teklif Verimlilik</td><td><span class="badge badge-amber">%54</span></td><td><span class="badge badge-green">%74.4</span></td><td><span class="badge badge-green">%74.3</span></td><td><span class="badge badge-green">%80.4</span></td><td><span class="badge badge-green">%80.4</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+  barChart('c-teklif', WEEKS.slice(0,5),
+    [{ data: [6583,6366,3813,8100,8290], backgroundColor: ['rgba(108,99,255,0.6)','rgba(108,99,255,0.6)','rgba(255,107,107,0.6)','rgba(0,212,170,0.6)','rgba(0,212,170,0.6)'] }]);
+  lineChart('c-verimlilik', WEEKS.slice(0,5), [
+    { data: [91.36,88.30,94,88,92], borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.05)' },
+    { data: [54,74.43,74.32,80.44,80.36], borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.05)', borderDash: [5,3] }
+  ]);
+}
+
+function renderFirma(rows) {
+  document.getElementById('firma-content').innerHTML = `
+    <div class="cards-grid">
+      ${mkCard('YEŞİL FİRMA', '1.440', '%60.5', 'up')}
+      ${mkCard('SARI FİRMA', '555', '%23.3', 'neutral')}
+      ${mkCard('TURUNCU FİRMA', '130', '%5.5', 'neutral')}
+      ${mkCard('KIRMIZI FİRMA', '141', '%5.9', 'down')}
+      ${mkCard('WELCOME', '113', '%4.8', 'neutral')}
+      ${mkCard('TOPLAM', '2.379', '6-12 Nis 2026', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Yeşil Firma Oranı Trendi</div><div class="chart-sub">Fİ-H6 · Haftalık %</div></div>
+        ${mkChart('c-yesil-trend')}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Flag Dağılımı</div><div class="chart-sub">6-12 Nis 2026</div></div>
+        ${mkChart('c-flags')}
+      </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-header"><div class="chart-title">Haftalık Firma Renk Trendi</div><div class="chart-sub">Yeşil / Sarı / Kırmızı karşılaştırması</div></div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#51cf66"></div>Yeşil</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffa94d"></div>Sarı</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Kırmızı</div>
+      </div>
+      ${mkChart('c-renk-trend', 180)}
+    </div>
+  `;
+  lineChart('c-yesil-trend', WEEKS,
+    [{ data: [57.35,59.59,58.56,60.50,60.01,60.53], borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
+  barChart('c-flags',
+    ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
+    [{ data: [1511,672,881,574,432,520,620], backgroundColor: ['#6c63ff','#ff6b6b','#ffa94d','#00d4aa','#51cf66','#e8590c','#cc5de8'].map(c=>c+'bb') }]);
+  lineChart('c-renk-trend', WEEKS, [
+    { data: [1362,1417,1372,1420,1427,1440], borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
+    { data: [624,582,591,564,554,555], borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
+    { data: [156,146,158,150,155,141], borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
+  ]);
+}
+
+function renderIK(rows) {
+  document.getElementById('ik-content').innerHTML = `
+    <div class="cards-grid">
+      ${mkCard('TOPLAM ÇALIŞAN', '80', 'Mart 2026', 'neutral')}
+      ${mkCard('AYLIK İŞE ALIM', '12', '', 'neutral')}
+      ${mkCard('TEKLİF KABUL', '%92', '↑ Yüksek', 'up')}
+      ${mkCard('RETENTION (3 AY)', '%100', '↑ Mükemmel', 'up')}
+      ${mkCard('TURNOVER', '%1.25', '↓ Düşük (iyi)', 'up')}
+      ${mkCard('AWS MALİYETİ', '$10.5K', 'Mart 2026', 'neutral')}
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">İK Özet — Mart 2026</div>
+      <table>
+        <thead><tr><th>Metrik</th><th>Değer</th><th>Durum</th></tr></thead>
+        <tbody>
+          <tr><td>İşe Alım Sayısı</td><td>12</td><td><span class="badge badge-green">Normal</span></td></tr>
+          <tr><td>Açık Pozisyon</td><td>12</td><td><span class="badge badge-amber">Devam Ediyor</span></td></tr>
+          <tr><td>Görüşme Sayısı</td><td>89</td><td><span class="badge badge-green">Aktif</span></td></tr>
+          <tr><td>Ort. Kapanma Süresi</td><td>22 gün</td><td><span class="badge badge-green">İyi</span></td></tr>
+          <tr><td>Teklif Kabul Oranı</td><td>%92</td><td><span class="badge badge-green">Yüksek</span></td></tr>
+          <tr><td>3 Ay Retention</td><td>%100</td><td><span class="badge badge-green">Mükemmel</span></td></tr>
+          <tr><td>Turnover Rate</td><td>%1.25</td><td><span class="badge badge-green">Düşük</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">Teknik & Ürün — Mart 2026</div>
+      <table>
+        <thead><tr><th>Metrik</th><th>Değer</th><th>Durum</th></tr></thead>
+        <tbody>
+          <tr><td>Kapatılan İş Score</td><td>650.51</td><td><span class="badge badge-green">Hedefte</span></td></tr>
+          <tr><td>Kapatılan Geliştirme</td><td>187</td><td><span class="badge badge-green">Aktif</span></td></tr>
+          <tr><td>Hotfix Sayısı</td><td>5</td><td><span class="badge badge-amber">Takipte</span></td></tr>
+          <tr><td>AWS Maliyeti</td><td>$10.500</td><td><span class="badge badge-amber">İzleniyor</span></td></tr>
+          <tr><td>Production ML Sistemi</td><td>1</td><td><span class="badge badge-green">Tamamlandı</span></td></tr>
+          <tr><td>Teknokent Proje</td><td>%100</td><td><span class="badge badge-green">Tamamlandı</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ─── MAIN LOAD ────────────────────────────────────────────
+async function loadData() {
+  const sheetId = document.getElementById('sheet-id-input')?.value || SHEET_ID;
+  try {
+    const csv = await fetchSheetData(sheetId);
+    const rows = parseCSV(csv);
+    document.getElementById('last-update').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr');
+    renderGenel(rows);
+    renderSatis(rows);
+    renderCagri(rows);
+    renderFirma(rows);
+    renderIK(rows);
+  } catch (e) {
+    // Fallback: render with static data (sheet not public yet)
+    document.getElementById('last-update').textContent = 'Statik veri (sheet bağlı değil)';
+    renderGenel([]);
+    renderSatis([]);
+    renderCagri([]);
+    renderFirma([]);
+    renderIK([]);
+  }
+}
+
+function saveAndReload() {
+  const id = document.getElementById('sheet-id-input').value.trim();
+  if (!id) return;
+  localStorage.setItem('dmetrix_sheet_id', id);
+  document.getElementById('setup-status').textContent = '✓ Kaydedildi, veriler yükleniyor...';
+  setTimeout(() => loadData(), 500);
+}
+
+// Auto-refresh every 5 minutes
+loadData();
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
