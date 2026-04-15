@@ -426,7 +426,16 @@ function parseCSV(csv) {
 function parseNum(s) {
   if (s === null || s === undefined || s === '' || s === '-') return null;
   if (typeof s === 'number') return s;
-  const clean = String(s).replace(/[₺$%\s]/g, '').replace(/\./g, '').replace(',', '.');
+  // Önce % işaretini kaldır
+  let clean = String(s).replace(/[₺$%\s]/g, '').trim();
+  // Eğer hem nokta hem virgül varsa: 1.234,56 → binlik nokta, ondalık virgül
+  if (clean.includes('.') && clean.includes(',')) {
+    clean = clean.replace(/\./g, '').replace(',', '.');
+  } else if (clean.includes(',')) {
+    // Sadece virgül var: ondalık ayracı olarak kullan
+    clean = clean.replace(',', '.');
+  }
+  // Sadece nokta var: zaten doğru format
   const n = parseFloat(clean);
   return isNaN(n) ? null : n;
 }
@@ -1433,8 +1442,11 @@ function renderDijital(rows) {
   }).filter(v=>v!==null) : [];
 
   const usH3d = usH3 ? usH3.slice(6).map(v => {
-    const s = String(v||'').replace(/\./g,'').replace(',','.').trim();
-    const n = parseFloat(s); return isNaN(n)||n<=0 ? null : n;
+    if (!v || v === '') return null;
+    const s = String(v).trim().replace(',','.');
+    const n = parseFloat(s);
+    if (isNaN(n) || n <= 0 || n > 100) return null;
+    return n;
   }).filter(v=>v!==null) : [];
 
   const lastH1 = usH1d.length ? usH1d[usH1d.length-1] : null;
