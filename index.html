@@ -986,9 +986,6 @@ function renderFirma(rows) {
   barChart('c-flags',
     ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
     [{ data: [1511,672,881,574,432,520,620], backgroundColor: ['#6c63ff','#ff6b6b','#ffa94d','#00d4aa','#51cf66','#e8590c','#cc5de8'].map(c=>c+'bb') }]);
-  const fi1r = findRow(rows,'Fİ-H1');
-  const fi2r = findRow(rows,'Fİ-H2');
-  const fi4r = findRow(rows,'Fİ-H4');
   const yesilD = fi1r ? getNumericValues(fi1r) : [1362,1417,1372,1420,1427,1440];
   const sariD  = fi2r ? getNumericValues(fi2r) : [624,582,591,564,554,555];
   const kirmD  = fi4r ? getNumericValues(fi4r) : [156,146,158,150,155,141];
