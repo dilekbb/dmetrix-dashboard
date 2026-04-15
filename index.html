@@ -254,6 +254,18 @@
       <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" stroke-width="1.5"/></svg>
       Pazarlama İçerik
     </div>
+    <div class="nav-item" onclick="goTo('satinalma')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Satınalma
+    </div>
+    <div class="nav-item" onclick="goTo('b2b')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="1.5" stroke-linecap="round"/></svg>
+      B2B
+    </div>
+    <div class="nav-item" onclick="goTo('veriyonetimi')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7C5 4 4 5 4 7z" stroke-width="1.5"/><path d="M9 12h6M9 8h6M9 16h4" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Veri Yönetimi
+    </div>
 
     <div class="sidebar-label">Ayarlar</div>
     <div class="nav-item" onclick="goTo('ayarlar')">
@@ -344,6 +356,33 @@
         <div class="page-desc">AYCAN ALPARSLAN · BÜRDE ÖZÇAKIR · Sosyal medya & içerik metrikleri</div>
       </div>
       <div id="pazarlama-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- SATINALMA -->
+    <div class="page" id="page-satinalma">
+      <div class="page-header">
+        <div class="page-title">Satınalma</div>
+        <div class="page-desc">HASAN ALTUN · Ofis & sarf malzeme giderleri</div>
+      </div>
+      <div id="satinalma-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- B2B -->
+    <div class="page" id="page-b2b">
+      <div class="page-header">
+        <div class="page-title">B2B</div>
+        <div class="page-desc">PELDA ŞAHİN · ZEREN ORMANCI · NİDANUR BAŞOĞUL</div>
+      </div>
+      <div id="b2b-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
+    </div>
+
+    <!-- VERİ YÖNETİMİ -->
+    <div class="page" id="page-veriyonetimi">
+      <div class="page-header">
+        <div class="page-title">Veri Yönetimi</div>
+        <div class="page-desc">GÖZDE ÖKTEM · TOLGA AYSAL · Sellable & Masterlist metrikleri</div>
+      </div>
+      <div id="veriyonetimi-content"><div class="loading"><div class="spinner"></div><div class="loading-text">Yükleniyor...</div></div></div>
     </div>
 
     <!-- AYARLAR -->
@@ -1722,6 +1761,337 @@ function renderPazarlama(rows) {
   });
 }
 
+}
+
+function renderSatinalma(rows) {
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+
+  const haA1  = findRow(rows,'HA-A1');  const haA2  = findRow(rows,'HA-A2');
+  const haA3  = findRow(rows,'HA-A3');  const haA4  = findRow(rows,'HA-A4');
+  const haA5  = findRow(rows,'HA-A5');  const haA11 = findRow(rows,'HA-A11');
+  const haA12 = findRow(rows,'HA-A12'); const haA13 = findRow(rows,'HA-A13');
+  const haA14 = findRow(rows,'HA-A14'); const haA15 = findRow(rows,'HA-A15');
+  const haA16 = findRow(rows,'HA-A16'); const haA17 = findRow(rows,'HA-A17');
+  const haA20 = findRow(rows,'HA-A20'); const haA21 = findRow(rows,'HA-A21');
+  const haA22 = findRow(rows,'HA-A22'); const haA23 = findRow(rows,'HA-A23');
+  const haA24 = findRow(rows,'HA-A24'); const haA26 = findRow(rows,'HA-A26');
+
+  document.getElementById('satinalma-content').innerHTML = `
+    ${mkSection('İçecek & Yiyecek', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('ÇEKİRDEK KAHVE (KG)', g(haA1), 'Aylık', 'neutral')}
+      ${mkCard('FİLTRE KAHVE (KG)', g(haA2), 'Aylık', 'neutral')}
+      ${mkCard('ÇAY (KG)', g(haA3), 'Aylık', 'neutral')}
+      ${mkCard('BİTKİ ÇAYI (KG)', g(haA4), 'Aylık', 'neutral')}
+      ${mkCard('SÜT (12li PAKET)', g(haA12), 'Aylık', 'neutral')}
+      ${mkCard('MEYVE GİDERİ', g(haA11)+' ₺', 'Aylık', 'neutral')}
+    </div>
+    <div class="cards-grid">
+      ${mkCard('CAFE GİDERİ', g(haA21)+' ₺', 'Aylık', 'neutral')}
+      ${mkCard('MUTFAK GİDERİ', g(haA22)+' ₺', 'Aylık', 'neutral')}
+    </div>
+
+    ${mkSection('Su & İçecek', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('DAMACANA SU (19L)', g(haA14), 'Aylık adet', 'neutral')}
+      ${mkCard('SU 1.5L', g(haA15), 'Aylık adet', 'neutral')}
+      ${mkCard('SU 0.5L', g(haA16), 'Aylık adet', 'neutral')}
+      ${mkCard('SU 0.33L', g(haA17), 'Aylık adet', 'neutral')}
+    </div>
+
+    ${mkSection('Giderler', '#ffa94d')}
+    <div class="cards-grid">
+      ${mkCard('HEPSİBURADA HEDİYE ÇEKİ', g(haA13)+' ₺', 'Aylık', 'neutral')}
+      ${mkCard('DONANIM GİDERİ', g(haA23)+' ₺', 'Aylık', 'neutral')}
+      ${mkCard('TAMİRAT GİDERİ', g(haA24)+' ₺', 'Aylık', 'neutral')}
+      ${mkCard('DEMİRBAŞ GİDERİ', g(haA26)+' ₺', 'Aylık', 'neutral')}
+      ${mkCard('TEMİZLİK GİDERİ', g(haA20)+' ₺', 'Aylık', 'neutral')}
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Kahve & Çay Tüketimi</div><div class="chart-sub">HA-A1, A2, A3, A4 · KG</div></div>
+        ${mkChart('c-ha-icecek', 200)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Gider Kalemleri</div><div class="chart-sub">HA · Aylık ₺</div></div>
+        ${mkChart('c-ha-gider', 200)}
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-title">Satınalma Detay — HASAN ALTUN</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Kalem</th><th>Değer</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A1</td><td>Çekirdek Kahve (kg)</td><td>${g(haA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A2</td><td>Filtre Kahve (kg)</td><td>${g(haA2)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A5</td><td>Küp Şeker (Koli)</td><td>${g(haA5)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A12</td><td>Süt (12li Paket)</td><td>${g(haA12)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A11</td><td>Meyve Gideri</td><td>${g(haA11)} ₺</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A13</td><td>Hepsiburada Hediye Çeki</td><td>${g(haA13)} ₺</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A21</td><td>Cafe Giderleri</td><td>${g(haA21)} ₺</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A22</td><td>Mutfak Giderleri</td><td>${g(haA22)} ₺</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A23</td><td>Donanım Giderleri</td><td>${g(haA23)} ₺</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A24</td><td>Tamirat Giderleri</td><td>${g(haA24)} ₺</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">HA-A26</td><td>Demirbaş Giderleri</td><td>${g(haA26)} ₺</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  const haIcecek = [haA1,haA2,haA3,haA4].map(r=>r?getLastNonEmpty(r)||0:0);
+  const elI = document.getElementById('c-ha-icecek');
+  if (elI) new Chart(elI, {
+    type: 'bar',
+    data: { labels: ['Çekirdek Kahve','Filtre Kahve','Çay','Bitki Çayı'],
+      datasets: [{ data: haIcecek, backgroundColor: ['rgba(108,99,255,0.7)','rgba(0,212,170,0.65)','rgba(255,169,77,0.7)','rgba(81,207,102,0.65)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+
+  const haGider = [haA21,haA22,haA23,haA24,haA13].map(r=>r?getLastNonEmpty(r)||0:0);
+  const elG = document.getElementById('c-ha-gider');
+  if (elG) new Chart(elG, {
+    type: 'bar',
+    data: { labels: ['Cafe','Mutfak','Donanım','Tamirat','Hediye Çeki'],
+      datasets: [{ data: haGider, backgroundColor: ['rgba(255,169,77,0.7)','rgba(255,107,107,0.6)','rgba(108,99,255,0.7)','rgba(0,212,170,0.65)','rgba(204,93,232,0.65)'] }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxRotation: 30 } },
+        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { callback: v => v>=1000?(v/1000).toFixed(0)+'K':v } } } }
+  });
+}
+
+function renderB2B(rows) {
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+
+  // PÇ — Pelda Şahin
+  const pcH1 = findRow(rows,'PÇ-H1'); // Yeni eklenen firma
+  const pcH2 = findRow(rows,'PÇ-H2'); // Aktif özel fiyat
+  const pcH3 = findRow(rows,'PÇ-H3'); // Yenilemesi yakın
+  const pcH4 = findRow(rows,'PÇ-H4'); // Hazırlanan sponsorlu içerik
+
+  // ZO — Zeren Ormancı
+  const zoH1 = findRow(rows,'ZO-H1'); // Onboarding firma
+  const zoH2 = findRow(rows,'ZO-H2'); // Onboarding mezuniyet
+  const zoH3 = findRow(rows,'ZO-H3'); // Firma hakkında yazısı
+  const zoH4 = findRow(rows,'ZO-H4'); // Kampanya
+  const zoH5 = findRow(rows,'ZO-H5'); // Galeri düzenlenen
+  const zoH6 = findRow(rows,'ZO-H6'); // Yorum tamamlanan
+
+  // NB — Nidanur Başoğul
+  const nbH1 = findRow(rows,'NB-H1'); // Haftalık yenilenen provider
+  const nbH2 = findRow(rows,'NB-H2'); // Performans konuşma süresi
+  const nbH3 = findRow(rows,'NB-H3'); // Provider health flag
+  const nbA1 = findRow(rows,'NB-A1'); // Aylık konuşma süresi
+  const nbA2 = findRow(rows,'NB-A2'); // Aylık yenilenen provider
+  const nbA3 = findRow(rows,'NB-A3'); // Aylık health flag
+
+  const pcH1d = pcH1 ? getNumericValues(pcH1).filter(v=>v>0) : [];
+  const pcH2d = pcH2 ? getNumericValues(pcH2).filter(v=>v>0) : [];
+  const zoH1d = zoH1 ? getNumericValues(zoH1).filter(v=>v>0) : [];
+  const zoH2d = zoH2 ? getNumericValues(zoH2).filter(v=>v>0) : [];
+
+  document.getElementById('b2b-content').innerHTML = `
+    ${mkSection('Özel Fiyat & Sponsorlu İçerik — PELDA ŞAHİN', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('YENİ EKLENEN FİRMA', g(pcH1), 'Son hafta', 'neutral')}
+      ${mkCard('AKTİF ÖZEL FİYAT', g(pcH2), 'Son hafta', 'neutral')}
+      ${mkCard('YENİLEMESİ YAKIN', g(pcH3), 'Son hafta', 'neutral')}
+      ${mkCard('SPONSORLU İÇERİK', g(pcH4), 'Son hafta', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Yeni Eklenen Firma Trendi</div><div class="chart-sub">PÇ-H1 · Haftalık</div></div>
+        ${mkChart('c-pc-firma', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Aktif Özel Fiyat Trendi</div><div class="chart-sub">PÇ-H2 · Haftalık</div></div>
+        ${mkChart('c-pc-fiyat', 180)}
+      </div>
+    </div>
+
+    ${mkSection('Onboarding & İçerik — ZEREN ORMANCI', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('ONBOARDING FİRMA', g(zoH1), 'Son hafta', 'neutral')}
+      ${mkCard('MEZUNİYET', g(zoH2), 'Son hafta', 'neutral')}
+      ${mkCard('FİRMA YAZISI', g(zoH3), 'Son hafta', 'neutral')}
+      ${mkCard('KAMPANYA', g(zoH4), 'Son hafta', 'neutral')}
+      ${mkCard('GALERİ DÜZENLENEN', g(zoH5), 'Son hafta', 'neutral')}
+      ${mkCard('YORUM TAMAMLANAN', g(zoH6), 'Son hafta', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Onboarding & Mezuniyet</div><div class="chart-sub">ZO-H1 + ZO-H2 · Haftalık</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#00d4aa"></div>Onboarding</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Mezuniyet</div>
+        </div>
+        ${mkChart('c-zo-onboard', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">İçerik & Kampanya</div><div class="chart-sub">ZO-H3, H4, H6 · Haftalık</div></div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#ffa94d"></div>Yazı</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Kampanya</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#6c63ff"></div>Yorum</div>
+        </div>
+        ${mkChart('c-zo-icerik', 180)}
+      </div>
+    </div>
+
+    ${mkSection('Provider Performans — NİDANUR BAŞOĞUL', '#ffa94d')}
+    <div class="cards-grid">
+      ${mkCard('HAFTALIK YENİLENEN', g(nbH1), 'Son hafta', 'neutral')}
+      ${mkCard('HEALTH FLAG', g(nbH3), 'Son hafta', 'neutral')}
+      ${mkCard('AYLIK YENİLENEN', g(nbA2), 'Mart 2026', 'neutral')}
+      ${mkCard('AYLIK HEALTH FLAG', g(nbA3), 'Mart 2026', 'neutral')}
+    </div>
+    <div class="table-card">
+      <div class="table-title">NB Aylık Özet — Mart 2026</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Değer</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">NB-A1</td><td>Aylık Performans Konuşma Süresi</td><td>${g(nbA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">NB-A2</td><td>Aylık Yenilenen Provider</td><td>${g(nbA2)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">NB-A3</td><td>Aylık Provider Health Flag</td><td>${g(nbA3)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (pcH1d.length) barChart('c-pc-firma', glbl(pcH1d), [{ data: pcH1d, backgroundColor: 'rgba(108,99,255,0.7)' }]);
+  if (pcH2d.length) lineChart('c-pc-fiyat', glbl(pcH2d), [{ data: pcH2d, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.07)' }]);
+
+  const len12zo = Math.max(zoH1d.length, zoH2d.length);
+  if (len12zo > 0) {
+    const el = document.getElementById('c-zo-onboard');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: WEEKS.slice(0,len12zo), datasets: [
+        { label: 'Onboarding', data: zoH1d, backgroundColor: 'rgba(0,212,170,0.7)' },
+        { label: 'Mezuniyet',  data: zoH2d, backgroundColor: 'rgba(108,99,255,0.65)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+
+  const zoH3d = zoH3 ? getNumericValues(zoH3).filter(v=>v>=0) : [];
+  const zoH4d = zoH4 ? getNumericValues(zoH4).filter(v=>v>=0) : [];
+  const zoH6d = zoH6 ? getNumericValues(zoH6).filter(v=>v>=0) : [];
+  const lenIc = Math.max(zoH3d.length, zoH4d.length, zoH6d.length);
+  if (lenIc > 0) {
+    const el = document.getElementById('c-zo-icerik');
+    if (el) new Chart(el, {
+      type: 'bar',
+      data: { labels: WEEKS.slice(0,lenIc), datasets: [
+        { label: 'Yazı',     data: zoH3d, backgroundColor: 'rgba(255,169,77,0.7)' },
+        { label: 'Kampanya', data: zoH4d, backgroundColor: 'rgba(255,107,107,0.6)' },
+        { label: 'Yorum',    data: zoH6d, backgroundColor: 'rgba(108,99,255,0.65)' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: 'rgba(255,255,255,0.04)' } }, y: { grid: { color: 'rgba(255,255,255,0.04)' } } } }
+    });
+  }
+}
+
+function renderVeriYonetimi(rows) {
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+
+  // GÖ — Gözde Öktem
+  const goH1 = findRow(rows,'GO-H1'); // Cleansing
+  const goH2 = findRow(rows,'GO-H2'); // Customer ekleme
+  const goH3 = findRow(rows,'GO-H3'); // Repete kontrol
+  const goH4 = findRow(rows,'GO-H4'); // Promosyon tanımlama
+  const goH5 = findRow(rows,'GO-H5'); // Promosyon düzenleme
+  const goH6 = findRow(rows,'GO-H6'); // Crisp mesaj
+  const goH7 = findRow(rows,'GO-H7'); // Merge/deletion
+  const goA1 = findRow(rows,'GO-A1'); // İletişim mesajları
+  const goA2 = findRow(rows,'GO-A2'); // İlçe raporları
+
+  // TA — Tolga Aysal
+  const taH1 = findRow(rows,'TA-H1'); // Feedback kontrol
+  const taH2 = findRow(rows,'TA-H2'); // Data adding
+  const taH3 = findRow(rows,'TA-H3'); // Promo description
+  const taH4 = findRow(rows,'TA-H4'); // Proje cleansing
+
+  const goH1d = goH1 ? getNumericValues(goH1).filter(v=>v>=0) : [];
+  const goH6d = goH6 ? getNumericValues(goH6).filter(v=>v>=0) : [];
+  const taH3d = taH3 ? getNumericValues(taH3).filter(v=>v>=0) : [];
+  const taH4d = taH4 ? getNumericValues(taH4).filter(v=>v>=0) : [];
+
+  document.getElementById('veriyonetimi-content').innerHTML = `
+    ${mkSection('Sellable & Masterlist — GÖZDE ÖKTEM', '#6c63ff')}
+    <div class="cards-grid">
+      ${mkCard('CLEANSING', g(goH1), 'Son hafta', 'neutral')}
+      ${mkCard('CUSTOMER EKLEME', g(goH2), 'Son hafta', 'neutral')}
+      ${mkCard('REPETE KONTROL', g(goH3), 'Son hafta', 'neutral')}
+      ${mkCard('PROMO TANIMLAMA', g(goH4), 'Son hafta', 'neutral')}
+      ${mkCard('PROMO DÜZENLEME', g(goH5), 'Son hafta', 'neutral')}
+      ${mkCard('CRİSP MESAJ', g(goH6), 'Son hafta', 'neutral')}
+      ${mkCard('MERGE/DELETION', g(goH7), 'Son hafta', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Cleansing Trendi</div><div class="chart-sub">GO-H1 · Haftalık</div></div>
+        ${mkChart('c-go-cleansing', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Crisp Mesaj Trendi</div><div class="chart-sub">GO-H6 · Haftalık</div></div>
+        ${mkChart('c-go-crisp', 180)}
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Gözde Öktem — Aylık Özet</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Değer</th></tr></thead>
+        <tbody>
+          <tr><td style="font-family:var(--mono);font-size:11px">GO-A1</td><td>İletişim Mesajları & Template</td><td>${g(goA1)}</td></tr>
+          <tr><td style="font-family:var(--mono);font-size:11px">GO-A2</td><td>Customized İlçe Raporları</td><td>${g(goA2)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    ${mkSection('Veri İşleme — TOLGA AYSAL', '#00d4aa')}
+    <div class="cards-grid">
+      ${mkCard('FEEDBACK KONTROL', g(taH1), 'Son hafta', 'neutral')}
+      ${mkCard('DATA ADDING', g(taH2), 'Son hafta', 'neutral')}
+      ${mkCard('PROMO DESCRIPTION', g(taH3), 'Son hafta', 'neutral')}
+      ${mkCard('PROJE CLEANSING', g(taH4), 'Son hafta', 'neutral')}
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Promo Description Trendi</div><div class="chart-sub">TA-H3 · Haftalık</div></div>
+        ${mkChart('c-ta-promo', 180)}
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Proje Cleansing Trendi</div><div class="chart-sub">TA-H4 · Haftalık</div></div>
+        ${mkChart('c-ta-proje', 180)}
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-title">Tolga Aysal — Haftalık Özet</div>
+      <table>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>2-8 Mar</th><th>9-15 Mar</th><th>16-22 Mar</th><th>23-29 Mar</th><th>30Mar-5Nis</th><th>6-12 Nis</th></tr></thead>
+        <tbody>
+          ${[['TA-H1','Feedback Kontrol',taH1],['TA-H2','Data Adding',taH2],['TA-H3','Promo Description',taH3],['TA-H4','Proje Cleansing',taH4]].map(([id,name,r]) => {
+            const vals = r ? getNumericValues(r) : [];
+            return `<tr><td style="font-family:var(--mono);font-size:11px">${id}</td><td>${name}</td>${[0,1,2,3,4,5].map(i=>`<td>${vals[i]!==undefined&&vals[i]!==null?vals[i].toLocaleString('tr'):'—'}</td>`).join('')}</tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (goH1d.length) barChart('c-go-cleansing', glbl(goH1d), [{ data: goH1d, backgroundColor: 'rgba(108,99,255,0.7)' }]);
+  if (goH6d.length) barChart('c-go-crisp',    glbl(goH6d), [{ data: goH6d, backgroundColor: 'rgba(0,212,170,0.7)' }]);
+  if (taH3d.length) barChart('c-ta-promo',    glbl(taH3d), [{ data: taH3d, backgroundColor: 'rgba(255,169,77,0.7)' }]);
+  if (taH4d.length) barChart('c-ta-proje',    glbl(taH4d), [{ data: taH4d, backgroundColor: 'rgba(255,107,107,0.65)' }]);
+}
+
 async function loadData() {
   try {
     const rows = await fetchSheetData();
@@ -1735,6 +2105,9 @@ async function loadData() {
     renderSEO(rows);
     renderDijital(rows);
     renderPazarlama(rows);
+    renderSatinalma(rows);
+    renderB2B(rows);
+    renderVeriYonetimi(rows);
   } catch (e) {
     document.getElementById('last-update').textContent = 'Bağlantı hatası — statik veri';
     renderGenel([]);
@@ -1746,6 +2119,9 @@ async function loadData() {
     renderSEO([]);
     renderDijital([]);
     renderPazarlama([]);
+    renderSatinalma([]);
+    renderB2B([]);
+    renderVeriYonetimi([]);
   }
 }
 
