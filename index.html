@@ -971,13 +971,26 @@ function renderSatis(rows) {
 }
 
 function renderCagri(rows) {
+  const dtH1  = findRow(rows,'DT-H1');
+  const dtH2  = findRow(rows,'DT-H2');
+  const dtH4  = findRow(rows,'DT-H4');
+  const dtH15 = findRow(rows,'DT-H15');
+  const dtH19 = findRow(rows,'DT-H19');
+
+  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
+  const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? fmtPct(v) : '—'; };
+
+  const dtH19d = dtH19 ? getNumericValues(dtH19).filter(v=>v>0) : [];
+  const dtH4d  = dtH4  ? dtH4.slice(6).map(v => { const s = String(v||'').replace('%','').replace(',','.').trim(); const n = parseFloat(s); return (isNaN(n)||n>100) ? null : n; }).filter(v=>v!==null) : [];
+  const dtH15d = dtH15 ? dtH15.slice(6).map(v => { const s = String(v||'').replace('%','').replace(',','.').trim(); const n = parseFloat(s); return (isNaN(n)||n>100) ? null : n; }).filter(v=>v!==null) : [];
+
   document.getElementById('cagri-content').innerHTML = `
     <div class="cards-grid">
-      ${mkCard('ÇIKARILAN TEKLİF', '8.290', '30 Mar–5 Nis', 'neutral')}
-      ${mkCard('YENİ ÜYELİK KARŞILAMA', '1.511', '30 Mar–5 Nis', 'neutral')}
-      ${mkCard('FEEDBACK ALINAN ÇİFT', '1.022', '30 Mar–5 Nis', 'neutral')}
-      ${mkCard('ÜYE YAPMA ORANI', '%92', '↑ İyi', 'up')}
-      ${mkCard('TEKLİF VERİMLİLİK', '%80.36', '↑ Yükseliş', 'up')}
+      ${mkCard('ÇIKARILAN TEKLİF', g(dtH19), 'Son hafta', 'neutral')}
+      ${mkCard('YENİ ÜYELİK KARŞILAMA', g(dtH1), 'Son hafta', 'neutral')}
+      ${mkCard('FEEDBACK ALINAN ÇİFT', g(dtH2), 'Son hafta', 'neutral')}
+      ${mkCard('ÜYE YAPMA ORANI', gPct(dtH4), '↑ İyi', 'up')}
+      ${mkCard('TEKLİF VERİMLİLİK', gPct(dtH15), '↑ Yükseliş', 'up')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -993,27 +1006,17 @@ function renderCagri(rows) {
         ${mkChart('c-verimlilik')}
       </div>
     </div>
-    <div class="table-card">
-      <div class="table-title">İletişim Merkezi Haftalık Özet</div>
-      <table>
-        <thead><tr><th>Metrik</th><th>2-8 Mar</th><th>9-15 Mar</th><th>16-22 Mar</th><th>23-29 Mar</th><th>30Mar-5Nis</th></tr></thead>
-        <tbody>
-          <tr><td>Çıkarılan Teklif</td><td>6.583</td><td>6.366</td><td>3.813</td><td>8.100</td><td>8.290</td></tr>
-          <tr><td>Yeni Üyelik Çağrısı</td><td>1.442</td><td>1.371</td><td>542</td><td>2.136</td><td>1.982</td></tr>
-          <tr><td>Üye Sayısı</td><td>1.095</td><td>971</td><td>417</td><td>1.549</td><td>1.511</td></tr>
-          <tr><td>Üye Yapma Oranı</td><td><span class="badge badge-blue">%91.4</span></td><td><span class="badge badge-amber">%88.3</span></td><td><span class="badge badge-green">%94</span></td><td><span class="badge badge-amber">%88</span></td><td><span class="badge badge-green">%92</span></td></tr>
-          <tr><td>Feedback Alınan Çift</td><td>1.011</td><td>1.054</td><td>707</td><td>1.017</td><td>1.022</td></tr>
-          <tr><td>Teklif Verimlilik</td><td><span class="badge badge-amber">%54</span></td><td><span class="badge badge-green">%74.4</span></td><td><span class="badge badge-green">%74.3</span></td><td><span class="badge badge-green">%80.4</span></td><td><span class="badge badge-green">%80.4</span></td></tr>
-        </tbody>
-      </table>
-    </div>
   `;
-  barChart('c-teklif', DYNAMIC_WEEKS.slice(0,5),
-    [{ data: [6583,6366,3813,8100,8290], backgroundColor: ['rgba(108,99,255,0.6)','rgba(108,99,255,0.6)','rgba(255,107,107,0.6)','rgba(0,212,170,0.6)','rgba(0,212,170,0.6)'] }]);
-  lineChart('c-verimlilik', DYNAMIC_WEEKS.slice(0,5), [
-    { data: [91.36,88.30,94,88,92], borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.05)' },
-    { data: [54,74.43,74.32,80.44,80.36], borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.05)', borderDash: [5,3] }
-  ]);
+
+  if (dtH19d.length) barChart('c-teklif', DYNAMIC_WEEKS.slice(0, dtH19d.length),
+    [{ data: dtH19d, backgroundColor: dtH19d.map((_,i) => i === dtH19d.length-1 ? 'rgba(0,212,170,0.8)' : 'rgba(108,99,255,0.6)') }]);
+
+  if (dtH4d.length || dtH15d.length) {
+    lineChart('c-verimlilik', DYNAMIC_WEEKS.slice(0, Math.max(dtH4d.length, dtH15d.length)), [
+      { data: dtH4d,  borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.05)' },
+      { data: dtH15d, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.05)', borderDash: [5,3] }
+    ]);
+  }
 }
 
 function renderFirma(rows) {
@@ -1071,7 +1074,15 @@ function renderFirma(rows) {
     [{ data: yesilTrend, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
   barChart('c-flags',
     ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
-    [{ data: [1511,672,881,574,432,520,620], backgroundColor: ['#6c63ff','#ff6b6b','#ffa94d','#00d4aa','#51cf66','#e8590c','#cc5de8'].map(c=>c+'bb') }]);
+    [{ data: [
+      findRow(rows,'Fİ-H7') ? getLastNonEmpty(findRow(rows,'Fİ-H7'))||0 : 1511,
+      findRow(rows,'Fİ-H8') ? getLastNonEmpty(findRow(rows,'Fİ-H8'))||0 : 672,
+      findRow(rows,'Fİ-H9') ? getLastNonEmpty(findRow(rows,'Fİ-H9'))||0 : 881,
+      findRow(rows,'Fİ-H10') ? getLastNonEmpty(findRow(rows,'Fİ-H10'))||0 : 574,
+      findRow(rows,'Fİ-H12') ? getLastNonEmpty(findRow(rows,'Fİ-H12'))||0 : 432,
+      findRow(rows,'Fİ-H13') ? getLastNonEmpty(findRow(rows,'Fİ-H13'))||0 : 520,
+      findRow(rows,'Fİ-H14') ? getLastNonEmpty(findRow(rows,'Fİ-H14'))||0 : 620
+    ], backgroundColor: ['#6c63ff','#ff6b6b','#ffa94d','#00d4aa','#51cf66','#e8590c','#cc5de8'].map(c=>c+'bb') }]);
   const yesilD = fi1r ? getNumericValues(fi1r) : [1362,1417,1372,1420,1427,1440];
   const sariD  = fi2r ? getNumericValues(fi2r) : [624,582,591,564,554,555];
   const kirmD  = fi4r ? getNumericValues(fi4r) : [156,146,158,150,155,141];
@@ -1309,10 +1320,6 @@ function renderFinans(rows) {
       ${mkCard('ORT. KAPANMA', g(bgA4)+' gün', 'Mart 2026', 'neutral')}
     </div>
     <div class="charts-grid">
-      <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">İK Oranları</div><div class="chart-sub">Teklif kabul / Retention / Turnover</div></div>
-        ${mkChart('c-ik-oranlar', 200)}
-      </div>
       <div class="chart-card">
         <div class="chart-header"><div class="chart-title">İK Sayısal Özet</div><div class="chart-sub">İşe alım / Açık pozisyon / Görüşme</div></div>
         ${mkChart('c-ik-sayisal', 200)}
