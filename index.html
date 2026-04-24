@@ -434,15 +434,16 @@ const WEEKS = ['2-8 Mar','9-15 Mar','16-22 Mar','23-29 Mar','30Mar-5Nis','6-12 N
 let DYNAMIC_WEEKS = [...WEEKS];
 
 function getWeekLabels(rows, count) {
-  // HAFTALIK sheet'teki header satırını bul
-  const headerRow = rows.find(r => String(r[0]).trim() === 'METRİK-ID');
-  if (headerRow) {
-    const labels = headerRow.slice(6).filter(v => v && String(v).trim() !== '');
-    if (labels.length > 0) {
-      DYNAMIC_WEEKS = labels.map(v => String(v).trim());
+  try {
+    const headerRow = rows.find(r => String(r[0]).trim() === 'METRİK-ID' || String(r[0]).trim() === 'METRIK-ID');
+    if (headerRow) {
+      const labels = headerRow.slice(6).filter(v => v && String(v).trim() !== '');
+      if (labels.length > 0) {
+        DYNAMIC_WEEKS = labels.map(v => String(v).trim());
+      }
     }
-  }
-  return count ? DYNAMIC_DYNAMIC_WEEKS.slice(0, count) : DYNAMIC_WEEKS;
+  } catch(e) {}
+  return count ? DYNAMIC_WEEKS.slice(0, count) : DYNAMIC_WEEKS;
 }
 
 // ─── NAVIGATION ──────────────────────────────────────────
