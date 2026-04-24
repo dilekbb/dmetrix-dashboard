@@ -428,7 +428,22 @@ Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
 Chart.defaults.font.family = "'DM Mono', monospace";
 Chart.defaults.font.size = 11;
 
-const WEEKS = ['2-8 Mar','9-15 Mar','16-22 Mar','23-29 Mar','30Mar-5Nis','6-12 Nis'];
+const WEEKS = ['2-8 Mar','9-15 Mar','16-22 Mar','23-29 Mar','30Mar-5Nis','6-12 Nis','13-19 Nis','20-26 Nis','27 Nis-3 May','4-10 May'];
+
+// Dinamik hafta etiketleri — sheet verisiyle güncellenir
+let DYNAMIC_WEEKS = [...WEEKS];
+
+function getWeekLabels(rows, count) {
+  // HAFTALIK sheet'teki header satırını bul
+  const headerRow = rows.find(r => String(r[0]).trim() === 'METRİK-ID');
+  if (headerRow) {
+    const labels = headerRow.slice(6).filter(v => v && String(v).trim() !== '');
+    if (labels.length > 0) {
+      DYNAMIC_WEEKS = labels.map(v => String(v).trim());
+    }
+  }
+  return count ? DYNAMIC_DYNAMIC_WEEKS.slice(0, count) : DYNAMIC_WEEKS;
+}
 
 // ─── NAVIGATION ──────────────────────────────────────────
 function goTo(page) {
@@ -581,6 +596,7 @@ function getLastNonEmpty(row) {
 }
 
 function renderGenel(rows) {
+  getWeekLabels(rows); // Dinamik hafta etiketlerini güncelle
   const h1 = findRow(rows, 'US-H1');
   const h2 = findRow(rows, 'US-H2');
   const h3 = findRow(rows, 'US-H3');
@@ -609,12 +625,28 @@ function renderGenel(rows) {
     return v > 1 ? v : v * 100; // handle both 60.5 and 0.605
   })() : null;
 
+  // Son verinin hangi haftaya ait olduğunu bul
+  const h1Header = h1 ? h1.slice(6) : [];
+  let lastLeadWeek = '';
+  for (let i = h1Header.length - 1; i >= 0; i--) {
+    const v = parseNum(h1Header[i]);
+    if (v !== null && v > 0) {
+      // HAFTALIK sheet header'ından hafta adını al
+      const headerRow = rows.find(r => r[0] === 'METRİK-ID' || r[1] === 'METRİK ADI');
+      if (headerRow) {
+        const hv = headerRow[i + 6];
+        if (hv) lastLeadWeek = String(hv).trim();
+      }
+      break;
+    }
+  }
+
   document.getElementById('genel-content').innerHTML = `
     <div class="cards-grid">
-      ${mkCard('TOTAL LEAD', lastLead ? lastLead.toLocaleString('tr') : '—', '30 Mar–5 Nis 2026', 'neutral')}
+      ${mkCard('TOTAL LEAD', lastLead ? lastLead.toLocaleString('tr') : '—', lastLeadWeek || 'Son hafta', 'neutral')}
       ${mkCard('CONVERSION RATE', lastConv ? fmtPct(lastConv) : '—', convs.length>=2 ? (lastConv>convs[convs.length-2]?'↑ Artış':'↓ Düşüş') : '', lastConv && convs.length>=2 ? (lastConv>convs[convs.length-2]?'up':'down') : 'neutral')}
       ${mkCard('LEAD PER COUPLE', h3 ? (() => { const v = getLastNonEmpty(h3); return v !== null ? v.toFixed(2) : '—'; })() : '—', '', 'neutral')}
-      ${mkCard('TOPLAM FİRMA', lastFirma ? lastFirma.toLocaleString('tr') : '—', '6–12 Nis 2026', 'neutral')}
+      ${mkCard('TOPLAM FİRMA', lastFirma ? lastFirma.toLocaleString('tr') : '—', 'Son hafta', 'neutral')}
       ${mkCard('YEŞİL FİRMA', lastYesil ? fmtPct(lastYesil) : '—', '↑ Yükseliş trendi', 'up')}
     </div>
 
@@ -663,9 +695,9 @@ function renderGenel(rows) {
     </div>
   `;
 
-  lineChart('c-lead', WEEKS.slice(0, leads.length),
+  lineChart('c-lead', DYNAMIC_DYNAMIC_WEEKS.slice(0, leads.length),
     [{ data: leads, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
-  lineChart('c-conv', WEEKS.slice(0, convs.length),
+  lineChart('c-conv', DYNAMIC_DYNAMIC_WEEKS.slice(0, convs.length),
     [{ data: convs, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
 
   const fi = {
@@ -686,7 +718,7 @@ function renderGenel(rows) {
   const zo1d = zo1r ? getNumericValues(zo1r) : [];
   const zo2d = zo2r ? getNumericValues(zo2r) : [];
   const zoLen = Math.max(zo1d.length, zo2d.length);
-  barChart('c-onboard', WEEKS.slice(0, zoLen),
+  barChart('c-onboard', DYNAMIC_DYNAMIC_WEEKS.slice(0, zoLen),
     [{ data: zo1d, backgroundColor: 'rgba(108,99,255,0.7)', label: 'Onboarding' },
      { data: zo2d, backgroundColor: 'rgba(0,212,170,0.7)', label: 'Mezuniyet' }]);
 }
@@ -974,9 +1006,9 @@ function renderCagri(rows) {
       </table>
     </div>
   `;
-  barChart('c-teklif', WEEKS.slice(0,5),
+  barChart('c-teklif', DYNAMIC_WEEKS.slice(0,5),
     [{ data: [6583,6366,3813,8100,8290], backgroundColor: ['rgba(108,99,255,0.6)','rgba(108,99,255,0.6)','rgba(255,107,107,0.6)','rgba(0,212,170,0.6)','rgba(0,212,170,0.6)'] }]);
-  lineChart('c-verimlilik', WEEKS.slice(0,5), [
+  lineChart('c-verimlilik', DYNAMIC_WEEKS.slice(0,5), [
     { data: [91.36,88.30,94,88,92], borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.05)' },
     { data: [54,74.43,74.32,80.44,80.36], borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.05)', borderDash: [5,3] }
   ]);
@@ -1033,7 +1065,7 @@ function renderFirma(rows) {
     return n > 1 ? Math.round(n*100)/100 : Math.round(n*10000)/100;
   }).filter(v => v !== null) : [57.35,59.59,58.56,60.50,60.01,60.53];
 
-  lineChart('c-yesil-trend', WEEKS.slice(0, yesilTrend.length),
+  lineChart('c-yesil-trend', DYNAMIC_DYNAMIC_WEEKS.slice(0, yesilTrend.length),
     [{ data: yesilTrend, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
   barChart('c-flags',
     ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
@@ -1042,7 +1074,7 @@ function renderFirma(rows) {
   const sariD  = fi2r ? getNumericValues(fi2r) : [624,582,591,564,554,555];
   const kirmD  = fi4r ? getNumericValues(fi4r) : [156,146,158,150,155,141];
   const renkLen = Math.max(yesilD.length, sariD.length, kirmD.length);
-  lineChart('c-renk-trend', WEEKS.slice(0, renkLen), [
+  lineChart('c-renk-trend', DYNAMIC_DYNAMIC_WEEKS.slice(0, renkLen), [
     { data: yesilD, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
     { data: sariD,  borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
     { data: kirmD,  borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
@@ -1714,7 +1746,7 @@ function renderPazarlama(rows) {
     const el = document.getElementById('c-by-sosyal');
     if (el) new Chart(el, {
       type: 'bar',
-      data: { labels: WEEKS.slice(0, len34), datasets: [
+      data: { labels: DYNAMIC_WEEKS.slice(0, len34), datasets: [
         { label: 'Gönderi', data: byH3d, backgroundColor: 'rgba(108,99,255,0.7)' },
         { label: 'Story',   data: byH4d, backgroundColor: 'rgba(0,212,170,0.65)' }
       ]},
@@ -1728,7 +1760,7 @@ function renderPazarlama(rows) {
     const el = document.getElementById('c-by-video');
     if (el) new Chart(el, {
       type: 'bar',
-      data: { labels: WEEKS.slice(0, len12), datasets: [
+      data: { labels: DYNAMIC_WEEKS.slice(0, len12), datasets: [
         { label: 'Çekim/Edit',      data: byH1d, backgroundColor: 'rgba(255,169,77,0.7)' },
         { label: 'Masaüstü Video',  data: byH2d, backgroundColor: 'rgba(255,107,107,0.6)' }
       ]},
@@ -1967,7 +1999,7 @@ function renderB2B(rows) {
     const el = document.getElementById('c-zo-onboard');
     if (el) new Chart(el, {
       type: 'bar',
-      data: { labels: WEEKS.slice(0,len12zo), datasets: [
+      data: { labels: DYNAMIC_WEEKS.slice(0,len12zo), datasets: [
         { label: 'Onboarding', data: zoH1d, backgroundColor: 'rgba(0,212,170,0.7)' },
         { label: 'Mezuniyet',  data: zoH2d, backgroundColor: 'rgba(108,99,255,0.65)' }
       ]},
@@ -1984,7 +2016,7 @@ function renderB2B(rows) {
     const el = document.getElementById('c-zo-icerik');
     if (el) new Chart(el, {
       type: 'bar',
-      data: { labels: WEEKS.slice(0,lenIc), datasets: [
+      data: { labels: DYNAMIC_WEEKS.slice(0,lenIc), datasets: [
         { label: 'Yazı',     data: zoH3d, backgroundColor: 'rgba(255,169,77,0.7)' },
         { label: 'Kampanya', data: zoH4d, backgroundColor: 'rgba(255,107,107,0.6)' },
         { label: 'Yorum',    data: zoH6d, backgroundColor: 'rgba(108,99,255,0.65)' }
