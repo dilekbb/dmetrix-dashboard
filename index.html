@@ -386,6 +386,7 @@
     </div>
 
     <!-- AYARLAR -->
+    <div class="page" id="page-ayarlar">
       <div class="page-header">
         <div class="page-title">Ayarlar</div>
         <div class="page-desc">Google Sheets bağlantısını yapılandır</div>
@@ -696,9 +697,9 @@ function renderGenel(rows) {
     </div>
   `;
 
-  lineChart('c-lead', DYNAMIC_DYNAMIC_WEEKS.slice(0, leads.length),
+  lineChart('c-lead', DYNAMIC_WEEKS.slice(0, leads.length),
     [{ data: leads, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
-  lineChart('c-conv', DYNAMIC_DYNAMIC_WEEKS.slice(0, convs.length),
+  lineChart('c-conv', DYNAMIC_WEEKS.slice(0, convs.length),
     [{ data: convs, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
 
   const fi = {
@@ -719,7 +720,7 @@ function renderGenel(rows) {
   const zo1d = zo1r ? getNumericValues(zo1r) : [];
   const zo2d = zo2r ? getNumericValues(zo2r) : [];
   const zoLen = Math.max(zo1d.length, zo2d.length);
-  barChart('c-onboard', DYNAMIC_DYNAMIC_WEEKS.slice(0, zoLen),
+  barChart('c-onboard', DYNAMIC_WEEKS.slice(0, zoLen),
     [{ data: zo1d, backgroundColor: 'rgba(108,99,255,0.7)', label: 'Onboarding' },
      { data: zo2d, backgroundColor: 'rgba(0,212,170,0.7)', label: 'Mezuniyet' }]);
 }
@@ -1066,7 +1067,7 @@ function renderFirma(rows) {
     return n > 1 ? Math.round(n*100)/100 : Math.round(n*10000)/100;
   }).filter(v => v !== null) : [57.35,59.59,58.56,60.50,60.01,60.53];
 
-  lineChart('c-yesil-trend', DYNAMIC_DYNAMIC_WEEKS.slice(0, yesilTrend.length),
+  lineChart('c-yesil-trend', DYNAMIC_WEEKS.slice(0, yesilTrend.length),
     [{ data: yesilTrend, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
   barChart('c-flags',
     ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
@@ -1075,7 +1076,7 @@ function renderFirma(rows) {
   const sariD  = fi2r ? getNumericValues(fi2r) : [624,582,591,564,554,555];
   const kirmD  = fi4r ? getNumericValues(fi4r) : [156,146,158,150,155,141];
   const renkLen = Math.max(yesilD.length, sariD.length, kirmD.length);
-  lineChart('c-renk-trend', DYNAMIC_DYNAMIC_WEEKS.slice(0, renkLen), [
+  lineChart('c-renk-trend', DYNAMIC_WEEKS.slice(0, renkLen), [
     { data: yesilD, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
     { data: sariD,  borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
     { data: kirmD,  borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
