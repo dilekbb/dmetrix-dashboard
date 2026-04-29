@@ -436,11 +436,38 @@ let DYNAMIC_WEEKS = [...WEEKS];
 
 function getWeekLabels(rows, count) {
   try {
+    const aylarTR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    const aylarTam = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
     const headerRow = rows.find(r => String(r[0]).trim() === 'METRİK-ID' || String(r[0]).trim() === 'METRIK-ID');
     if (headerRow) {
-      const labels = headerRow.slice(6).filter(v => v && String(v).trim() !== '');
+      const labels = headerRow.slice(6).map(v => {
+        if (!v) return null;
+        // Date objesi ise hafta aralığını üret
+        if (v instanceof Date || (typeof v === 'string' && v.includes('T') && v.includes('Z'))) {
+          const d = v instanceof Date ? v : new Date(v);
+          if (!isNaN(d.getTime())) {
+            // Haftanın başlangıcını bul (Pazartesi)
+            const day = d.getDay();
+            const diff = day === 0 ? -6 : 1 - day;
+            const mon = new Date(d); mon.setDate(d.getDate() + diff);
+            const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+            return `${mon.getDate()}-${sun.getDate()} ${aylarTR[mon.getMonth()]}`;
+          }
+        }
+        const s = String(v).trim();
+        if (!s) return null;
+        // "2-8 MART 2026" formatını kısalt
+        for (let i = 0; i < aylarTam.length; i++) {
+          if (s.toUpperCase().includes(aylarTam[i].toUpperCase())) {
+            const match = s.match(/(\d+[-–]\d+)/);
+            if (match) return match[1] + ' ' + aylarTR[i];
+            break;
+          }
+        }
+        return s.length > 12 ? s.substring(0, 12) : s;
+      }).filter(Boolean);
       if (labels.length > 0) {
-        DYNAMIC_WEEKS = labels.map(v => String(v).trim());
+        DYNAMIC_WEEKS = labels;
       }
     }
   } catch(e) {}
@@ -820,16 +847,27 @@ function renderSatis(rows, gunlukHeaderRow) {
 
   function parseLabel(v) {
     if (!v) return null;
+    // Date objesi
     if (v instanceof Date) return v.getDate() + ' ' + aylarKisa[v.getMonth()];
     const s = String(v).trim();
     if (!s) return null;
+    // ISO format: "2026-03-03T21:00:00.000Z"
+    if (s.includes('T') && s.includes('Z')) {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        // UTC+3 için düzelt
+        const local = new Date(d.getTime() + 3*60*60*1000);
+        return local.getUTCDate() + ' ' + aylarKisa[local.getUTCMonth()];
+      }
+    }
+    // "27 Nisan  26" formatı
     for (let i = 0; i < aylarTam.length; i++) {
       if (s.indexOf(aylarTam[i]) > -1) {
         const gun = parseInt(s);
         if (!isNaN(gun)) return gun + ' ' + aylarKisa[i];
       }
     }
-    return null; // Tarih değilse null
+    return null;
   }
 
   const headerRow = gunlukHeaderRow || null;
