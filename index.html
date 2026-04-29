@@ -989,29 +989,29 @@ function renderSatis(rows) {
     // Kartları yeniden render et
     const cards = document.getElementById('satis-cards-sas');
     if(cards) cards.innerHTML =
-      mkCard('ZİYARET (TOPLAM)', ziyLast ? ziyLast.toLocaleString('tr') : '—', labels[labels.length-1]||'Son gün', 'neutral') +
-      mkCard('ZİYARET SÜRESİ', sureLast ? sureLast.toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('ZİYARET (TOPLAM)', sumFiltered(d.sasZiyaret) ? sumFiltered(d.sasZiyaret).toLocaleString('tr') : '—', labels[labels.length-1]||'Son gün', 'neutral') +
+      mkCard('ZİYARET SÜRESİ', sumFiltered(d.sasSure) ? sumFiltered(d.sasSure).toLocaleString('tr')+' dk' : '—', 'Toplam süre', 'neutral') +
       mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.sasYeni)), 'Seçili dönem', 'up') +
       mkCard('SATIŞ YENİLEME', fmtTL(sumFiltered(d.sasYenileme)), 'Seçili dönem', 'up');
 
     const cardsTes = document.getElementById('satis-cards-tes');
     if(cardsTes) cardsTes.innerHTML =
-      mkCard('GÖRÜŞME ADEDİ', lastFiltered(d.tesGorusme) ? lastFiltered(d.tesGorusme).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
-      mkCard('GÖRÜŞME SÜRESİ', lastFiltered(d.tesSure) ? lastFiltered(d.tesSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('GÖRÜŞME ADEDİ', sumFiltered(d.tesGorusme) ? sumFiltered(d.tesGorusme).toLocaleString('tr') : '—', 'Toplam', 'neutral') +
+      mkCard('GÖRÜŞME SÜRESİ', sumFiltered(d.tesSure) ? sumFiltered(d.tesSure).toLocaleString('tr')+' dk' : '—', 'Toplam süre', 'neutral') +
       mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.tesYeni)), 'Seçili dönem', 'up') +
       mkCard('SATIŞ YENİLEME', fmtTL(sumFiltered(d.tesYenileme)), 'Seçili dönem', 'up');
 
     const cardsSad = document.getElementById('satis-cards-sad');
     if(cardsSad) cardsSad.innerHTML =
-      mkCard('GÖRÜŞÜLEN FİRMA', lastFiltered(d.sadFirma) ? lastFiltered(d.sadFirma).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
-      mkCard('GÖRÜŞME SÜRESİ', lastFiltered(d.sadSure) ? lastFiltered(d.sadSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
-      mkCard('RANDEVU ADEDİ', lastFiltered(d.sadRandevu) ? lastFiltered(d.sadRandevu).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
+      mkCard('GÖRÜŞÜLEN FİRMA', sumFiltered(d.sadFirma) ? sumFiltered(d.sadFirma).toLocaleString('tr') : '—', 'Toplam', 'neutral') +
+      mkCard('GÖRÜŞME SÜRESİ', sumFiltered(d.sadSure) ? sumFiltered(d.sadSure).toLocaleString('tr')+' dk' : '—', 'Toplam süre', 'neutral') +
+      mkCard('RANDEVU ADEDİ', sumFiltered(d.sadRandevu) ? sumFiltered(d.sadRandevu).toLocaleString('tr') : '—', 'Toplam', 'neutral') +
       mkCard('TOPLAM FİRMA', sumFiltered(d.sadFirma).toLocaleString('tr'), 'Seçili dönem', 'neutral');
 
     const cardsMos = document.getElementById('satis-cards-mos');
     if(cardsMos) cardsMos.innerHTML =
-      mkCard('ZİYARET ADEDİ', lastFiltered(d.mosZiyaret) ? lastFiltered(d.mosZiyaret).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
-      mkCard('ZİYARET SÜRESİ', lastFiltered(d.mosSure) ? lastFiltered(d.mosSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('ZİYARET ADEDİ', sumFiltered(d.mosZiyaret) ? sumFiltered(d.mosZiyaret).toLocaleString('tr') : '—', 'Toplam', 'neutral') +
+      mkCard('ZİYARET SÜRESİ', sumFiltered(d.mosSure) ? sumFiltered(d.mosSure).toLocaleString('tr')+' dk' : '—', 'Toplam süre', 'neutral') +
       mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.mosYeni)), 'Seçili dönem', 'up');
 
     // Grafikleri yeniden çiz
