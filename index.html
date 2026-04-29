@@ -822,34 +822,33 @@ function renderSatis(rows) {
 
   const gunLabels = getGunlukLabels(ot1);
 
-  const sasZiyaret   = ot1  ? getNumericValues(ot1).filter((_,i)=>gunLabels[i]!=null)  : [];
-  const sasSure      = ot4  ? getNumericValues(ot4).filter((_,i)=>gunLabels[i]!=null)  : [];
-  const sasYeni      = ot7  ? ot7.slice(6).map(v=>parseNum(v))  : [];
-  const sasYenileme  = ot8  ? ot8.slice(6).map(v=>parseNum(v))  : [];
-  const tesGorusme   = ot9  ? getNumericValues(ot9).filter(v=>v>0)  : [];
-  const tesSure      = ot10 ? getNumericValues(ot10).filter(v=>v>0) : [];
-  const tesYeni      = ot11 ? ot11.slice(6).map(v=>parseNum(v)) : [];
-  const tesYenileme  = ot12 ? ot12.slice(6).map(v=>parseNum(v)) : [];
-  const sadFirma     = ot13 ? getNumericValues(ot13).filter(v=>v>0) : [];
-  const sadSure      = ot14 ? getNumericValues(ot14).filter(v=>v>0) : [];
-  const sadRandevu   = ot15 ? getNumericValues(ot15).filter(v=>v>0) : [];
-  const mosZiyaret   = ot16 ? getNumericValues(ot16).filter(v=>v>0) : [];
-  const mosSure      = ot17 ? getNumericValues(ot17).filter(v=>v>0) : [];
-  const mosYeni      = ot18 ? ot18.slice(6).map(v=>parseNum(v)) : [];
+  // Tüm dizileri aynı length'te tut — null değerler korunsun
+  const allLen = gunLabels.length;
+  const padArr = (row) => {
+    if (!row) return Array(allLen).fill(null);
+    return row.slice(6).map(v => parseNum(v)).slice(0, allLen);
+  };
 
-  // Tarih etiketlerini temizle
-  const cleanLabels = gunLabels.filter(v=>v!=null);
+  const sasZiyaret  = padArr(ot1);
+  const sasSure     = padArr(ot4);
+  const sasYeni     = padArr(ot7);
+  const sasYenileme = padArr(ot8);
+  const tesGorusme  = padArr(ot9);
+  const tesSure     = padArr(ot10);
+  const tesYeni     = padArr(ot11);
+  const tesYenileme = padArr(ot12);
+  const sadFirma    = padArr(ot13);
+  const sadSure     = padArr(ot14);
+  const sadRandevu  = padArr(ot15);
+  const mosZiyaret  = padArr(ot16);
+  const mosSure     = padArr(ot17);
+  const mosYeni     = padArr(ot18);
 
-  // Son 30 / son 14 / tüm dönem filtre seçenekleri
-  const last = arr => arr.length ? arr[arr.length-1] : null;
-  const sumArr = arr => arr.reduce((a,b)=>a+(b||0),0);
+  // Temiz etiket listesi — null olanlar dahil, index eşleşmesi için
+  const cleanLabels = gunLabels;
 
-  // Filtre seçenekleri
-  const filterOpts = [
-    { label: 'Son 14 Gün', val: 14 },
-    { label: 'Son 30 Gün', val: 30 },
-    { label: 'Tüm Dönem',  val: 0  }
-  ];
+  const last = arr => { for(let i=arr.length-1;i>=0;i--) if(arr[i]!=null&&arr[i]>0) return arr[i]; return null; };
+  const sumArr = arr => arr.reduce((a,b)=>a+(b>0?b:0),0);
 
   // Veriler window'a kaydet, filtre değişince güncelle
   window._satisData = { cleanLabels, sasZiyaret, sasSure, sasYeni, sasYenileme, tesGorusme, tesSure, tesYeni, tesYenileme, sadFirma, sadSure, sadRandevu, mosZiyaret, mosSure, mosYeni };
@@ -974,10 +973,10 @@ function renderSatis(rows) {
       }
     });
 
-    const labels = indices.map(i => d.cleanLabels[i]);
+    const labels = indices.map(i => d.cleanLabels[i]).filter(Boolean);
     const sl = arr => indices.map(i => (arr && arr[i] != null) ? arr[i] : null);
-    const sumFiltered = arr => indices.reduce((s,i) => s + (arr[i]>0 ? arr[i] : 0), 0);
-    const lastFiltered = arr => { for(let k=indices.length-1;k>=0;k--) { if(arr[indices[k]]>0) return arr[indices[k]]; } return null; };
+    const sumFiltered = arr => indices.reduce((s,i) => s + ((arr[i]!=null&&arr[i]>0) ? arr[i] : 0), 0);
+    const lastFiltered = arr => { for(let k=indices.length-1;k>=0;k--) { const v=arr[indices[k]]; if(v!=null&&v>0) return v; } return null; };
 
     // Kartları güncelle
     const ziyLast = lastFiltered(d.sasZiyaret);
