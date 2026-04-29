@@ -835,11 +835,20 @@ function renderSatis(rows) {
 
   // Tarih başlıklarını GÜNLÜK METRİK-ID header satırından oku
   // ÖT-G1 satırının index'ini bul, ondan önce gelen METRİK-ID satırı GÜNLÜK header'ı
-  const ot1Idx = rows.findIndex(r => String(r[0]).trim() === 'ÖT-G1');
+  const ot1Idx = rows.findIndex(r => {
+    const v = String(r[0]||'').trim();
+    return v === '\u00d6T-G1' || v === 'ÖT-G1' || v.replace(/\u00d6/g,'Ö') === 'ÖT-G1';
+  });
   let gunlukHeader = null;
-  for (let i = ot1Idx - 1; i >= 0; i--) {
-    if (String(rows[i][0]).trim() === 'METRİK-ID') { gunlukHeader = rows[i]; break; }
+  if (ot1Idx > 0) {
+    for (let i = ot1Idx - 1; i >= 0; i--) {
+      const v = String(rows[i][0]||'').trim();
+      if (v === 'METRİK-ID' || v === 'METRIK-ID' || v.toUpperCase().includes('METRIK')) {
+        gunlukHeader = rows[i]; break;
+      }
+    }
   }
+  // Eğer header bulunamazsa ot1 satırının uzunluğunu kullan, etiketler G1,G2... olsun
   const gunLabels = gunlukHeader ? gunlukHeader.slice(6).map(v => {
     if (!v) return null;
     if (v instanceof Date) return v.getDate() + ' ' + aylarKisa[v.getMonth()];
@@ -852,7 +861,7 @@ function renderSatis(rows) {
       }
     }
     return s;
-  }) : [];
+  }) : (ot1 ? ot1.slice(6).map((_, i) => 'G'+(i+1)) : []);
 
   // Tüm dizileri aynı length'te tut — null değerler korunsun
   const allLen = gunLabels.length;
