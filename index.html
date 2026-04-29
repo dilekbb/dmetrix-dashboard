@@ -809,14 +809,27 @@ function renderSatis(rows) {
   const ot18 = findRow(rows,'ÖT-G18');
 
   // Günlük tarih etiketlerini header satırından oku
-  const aylar = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const aylarKisa = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+  const aylarTam  = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
   function getGunlukLabels(row) {
     if (!row) return [];
     return row.slice(6).map(v => {
       if (!v) return null;
-      if (v instanceof Date) return v.getDate() + ' ' + aylar[v.getMonth()];
+      if (v instanceof Date) {
+        return v.getDate() + ' ' + aylarKisa[v.getMonth()];
+      }
       const s = String(v).trim();
-      return s || null;
+      if (!s) return null;
+      // "27 Nisan  26" → "27 Nis" formatına çevir
+      for (let i = 0; i < aylarTam.length; i++) {
+        if (s.indexOf(aylarTam[i]) > -1) {
+          const gun = parseInt(s);
+          if (!isNaN(gun)) return gun + ' ' + aylarKisa[i];
+        }
+      }
+      // Zaten kısa formatta ise olduğu gibi döndür
+      return s;
     });
   }
 
