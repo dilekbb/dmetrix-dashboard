@@ -599,64 +599,68 @@ function getLastNonEmpty(row) {
 
 function renderGenel(rows) {
   getWeekLabels(rows); // Dinamik hafta etiketlerini güncelle
-  const h1 = findRow(rows, 'US-H1');
-  const h2 = findRow(rows, 'US-H2');
-  const h3 = findRow(rows, 'US-H3');
+  const h1   = findRow(rows, 'US-H1');
+  const h2   = findRow(rows, 'US-H2');
+  const h3   = findRow(rows, 'US-H3');
   const fi11 = findRow(rows, 'Fİ-H11');
-  const fi6 = findRow(rows, 'Fİ-H6');
-  const zo1 = rows.find(r => r[0] === 'ZO-H1');
+  const fi6  = findRow(rows, 'Fİ-H6');
+  const fi1  = findRow(rows, 'Fİ-H1');
+  const fi2  = findRow(rows, 'Fİ-H2');
+  const fi3  = findRow(rows, 'Fİ-H3');
+  const fi4  = findRow(rows, 'Fİ-H4');
 
   const leads = h1 ? getNumericValues(h1).filter(v => v > 0) : [];
-  const convRaw = h2 ? h2.slice(6).map(v => {
+  const convs = h2 ? h2.slice(6).map(v => {
     if (!v || v === '') return null;
-    // "3,6%" veya "%3,6" veya "3.6%" formatlarını handle et
     const s = String(v).replace('%','').trim().replace(',','.');
     const n = parseFloat(s);
-    if (isNaN(n)) return null;
-    // 100'den büyükse zaten yanlış parse edilmiş, atla
-    if (n > 100) return null;
+    if (isNaN(n) || n > 100) return null;
     return n;
   }).filter(v => v !== null) : [];
-  const convs = convRaw;
-  const lastLead = leads.length ? leads[leads.length-1] : null;
-  const lastConv = convs.length ? convs[convs.length-1] : null;
-  const lastFirma = getLastNonEmpty(fi11);
-  const lastYesil = fi6 ? (() => {
-    const v = getLastNonEmpty(fi6);
-    if (!v) return null;
-    return v > 1 ? v : v * 100; // handle both 60.5 and 0.605
-  })() : null;
+  const h3vals = h3 ? h3.slice(6).map(v => {
+    const s = String(v||'').trim().replace(',','.');
+    const n = parseFloat(s);
+    return (isNaN(n)||n<=0||n>100) ? null : n;
+  }) : [];
+  const fi11vals = fi11 ? fi11.slice(6).map(v => parseNum(v)) : [];
+  const fi6vals  = fi6  ? fi6.slice(6).map(v => {
+    const s = String(v||'').replace('%','').replace(',','.').trim();
+    const n = parseFloat(s);
+    if (isNaN(n)) return null;
+    return n > 1 ? Math.round(n*100)/100 : Math.round(n*10000)/100;
+  }) : [];
+  const fi1vals = fi1 ? fi1.slice(6).map(v => parseNum(v)) : [];
+  const fi2vals = fi2 ? fi2.slice(6).map(v => parseNum(v)) : [];
+  const fi3vals = fi3 ? fi3.slice(6).map(v => parseNum(v)) : [];
+  const fi4vals = fi4 ? fi4.slice(6).map(v => parseNum(v)) : [];
 
-  // Son verinin hangi haftaya ait olduğunu bul
-  const h1Header = h1 ? h1.slice(6) : [];
-  let lastLeadWeek = '';
-  for (let i = h1Header.length - 1; i >= 0; i--) {
-    const v = parseNum(h1Header[i]);
-    if (v !== null && v > 0) {
-      // HAFTALIK sheet header'ından hafta adını al
-      const headerRow = rows.find(r => r[0] === 'METRİK-ID' || r[1] === 'METRİK ADI');
-      if (headerRow) {
-        const hv = headerRow[i + 6];
-        if (hv) lastLeadWeek = String(hv).trim();
-      }
-      break;
-    }
-  }
+  // Hafta seçeneklerini oluştur — veri olan haftaları bul
+  const weekOptions = DYNAMIC_WEEKS.map((w, i) => {
+    const hasData = leads[i] || convs[i];
+    return hasData !== undefined && hasData !== null ? { label: w, index: i } : null;
+  }).filter(Boolean);
+
+  // Son veri olan hafta index'i
+  let defaultIdx = leads.length - 1;
+
+  // Seçilen haftanın kartlarını güncelle
+  window._genelRows = rows;
+  window._genelData = { leads, convs, h3vals, fi11vals, fi6vals, fi1vals, fi2vals, fi3vals, fi4vals };
 
   document.getElementById('genel-content').innerHTML = `
-    <div class="cards-grid">
-      ${mkCard('TOTAL LEAD', lastLead ? lastLead.toLocaleString('tr') : '—', lastLeadWeek || 'Son hafta', 'neutral')}
-      ${mkCard('CONVERSION RATE', lastConv ? fmtPct(lastConv) : '—', convs.length>=2 ? (lastConv>convs[convs.length-2]?'↑ Artış':'↓ Düşüş') : '', lastConv && convs.length>=2 ? (lastConv>convs[convs.length-2]?'up':'down') : 'neutral')}
-      ${mkCard('LEAD PER COUPLE', h3 ? (() => { const v = getLastNonEmpty(h3); return v !== null ? v.toFixed(2) : '—'; })() : '—', '', 'neutral')}
-      ${mkCard('TOPLAM FİRMA', lastFirma ? lastFirma.toLocaleString('tr') : '—', 'Son hafta', 'neutral')}
-      ${mkCard('YEŞİL FİRMA', lastYesil ? fmtPct(lastYesil) : '—', '↑ Yükseliş trendi', 'up')}
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="font-size:12px;color:var(--muted);font-family:var(--mono);">HAFTA SEÇ:</div>
+      <select id="week-select" onchange="updateGenelCards()" style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;outline:none;">
+        ${DYNAMIC_WEEKS.map((w, i) => `<option value="${i}" ${i === defaultIdx ? 'selected' : ''}>${w}</option>`).join('')}
+      </select>
     </div>
+    <div id="genel-cards" class="cards-grid"></div>
 
     <div class="charts-grid">
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Haftalık Total Lead</div>
-          <div class="chart-sub">US-H1 · Mart–Nisan 2026</div>
+          <div class="chart-sub">US-H1 · Tüm haftalar</div>
         </div>
         ${mkChart('c-lead')}
       </div>
@@ -673,7 +677,7 @@ function renderGenel(rows) {
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">Firma Sağlık Dağılımı</div>
-          <div class="chart-sub">6–12 Nis 2026</div>
+          <div class="chart-sub">Son hafta</div>
         </div>
         <div class="legend">
           <div class="legend-item"><div class="legend-dot" style="background:#51cf66"></div>Yeşil</div>
@@ -697,21 +701,43 @@ function renderGenel(rows) {
     </div>
   `;
 
+  // Kartları seçilen haftaya göre güncelle
+  window.updateGenelCards = function() {
+    const idx = parseInt(document.getElementById('week-select').value);
+    const d = window._genelData;
+    const w = DYNAMIC_WEEKS[idx] || 'Son hafta';
+
+    const lead   = d.leads[idx] != null ? d.leads[idx] : null;
+    const conv   = d.convs[idx] != null ? d.convs[idx] : null;
+    const lpc    = d.h3vals[idx] != null ? d.h3vals[idx] : null;
+    const firma  = d.fi11vals[idx] != null ? d.fi11vals[idx] : null;
+    const yesil  = d.fi6vals[idx] != null ? d.fi6vals[idx] : null;
+
+    const prevConv = idx > 0 ? d.convs[idx-1] : null;
+    const convDir  = (conv !== null && prevConv !== null) ? (conv > prevConv ? 'up' : 'down') : 'neutral';
+    const convDelta = (conv !== null && prevConv !== null) ? (conv > prevConv ? '↑ Artış' : '↓ Düşüş') : '';
+
+    document.getElementById('genel-cards').innerHTML =
+      mkCard('TOTAL LEAD',      lead  ? lead.toLocaleString('tr') : '—', w, 'neutral') +
+      mkCard('CONVERSION RATE', conv  ? fmtPct(conv) : '—', convDelta, convDir) +
+      mkCard('LEAD PER COUPLE', lpc   ? lpc.toFixed(2) : '—', '', 'neutral') +
+      mkCard('TOPLAM FİRMA',    firma ? firma.toLocaleString('tr') : '—', w, 'neutral') +
+      mkCard('YEŞİL FİRMA',     yesil ? fmtPct(yesil) : '—', '', yesil && d.fi6vals[idx-1] && yesil > d.fi6vals[idx-1] ? 'up' : 'neutral');
+  };
+
+  // İlk yükleme
+  updateGenelCards();
+
+  // Grafikleri çiz
   lineChart('c-lead', DYNAMIC_WEEKS.slice(0, leads.length),
     [{ data: leads, borderColor: '#6c63ff', backgroundColor: 'rgba(108,99,255,0.08)' }]);
   lineChart('c-conv', DYNAMIC_WEEKS.slice(0, convs.length),
     [{ data: convs, borderColor: '#00d4aa', backgroundColor: 'rgba(0,212,170,0.07)' }]);
 
-  const fi = {
-    yesil: findRow(rows,'Fİ-H1'), sari: findRow(rows,'Fİ-H2'),
-    turuncu: findRow(rows,'Fİ-H3'), kirmizi: findRow(rows,'Fİ-H4')
-  };
   doughnutChart('c-saglik',
     ['Yeşil','Sarı','Turuncu','Kırmızı'],
-    [fi.yesil ? getLastNonEmpty(fi.yesil)||0 : 0,
-     fi.sari  ? getLastNonEmpty(fi.sari)||0  : 0,
-     fi.turuncu ? getLastNonEmpty(fi.turuncu)||0 : 0,
-     fi.kirmizi ? getLastNonEmpty(fi.kirmizi)||0 : 0],
+    [fi1 ? getLastNonEmpty(fi1)||0 : 0, fi2 ? getLastNonEmpty(fi2)||0 : 0,
+     fi3 ? getLastNonEmpty(fi3)||0 : 0, fi4 ? getLastNonEmpty(fi4)||0 : 0],
     ['#51cf66','#ffa94d','#e8590c','#ff6b6b']
   );
 
