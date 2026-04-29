@@ -833,7 +833,26 @@ function renderSatis(rows) {
     });
   }
 
-  const gunLabels = getGunlukLabels(ot1);
+  // Tarih başlıklarını GÜNLÜK METRİK-ID header satırından oku
+  // ÖT-G1 satırının index'ini bul, ondan önce gelen METRİK-ID satırı GÜNLÜK header'ı
+  const ot1Idx = rows.findIndex(r => String(r[0]).trim() === 'ÖT-G1');
+  let gunlukHeader = null;
+  for (let i = ot1Idx - 1; i >= 0; i--) {
+    if (String(rows[i][0]).trim() === 'METRİK-ID') { gunlukHeader = rows[i]; break; }
+  }
+  const gunLabels = gunlukHeader ? gunlukHeader.slice(6).map(v => {
+    if (!v) return null;
+    if (v instanceof Date) return v.getDate() + ' ' + aylarKisa[v.getMonth()];
+    const s = String(v).trim();
+    if (!s) return null;
+    for (let i = 0; i < aylarTam.length; i++) {
+      if (s.indexOf(aylarTam[i]) > -1) {
+        const gun = parseInt(s);
+        if (!isNaN(gun)) return gun + ' ' + aylarKisa[i];
+      }
+    }
+    return s;
+  }) : [];
 
   // Tüm dizileri aynı length'te tut — null değerler korunsun
   const allLen = gunLabels.length;
