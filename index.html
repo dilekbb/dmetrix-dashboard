@@ -461,7 +461,12 @@ async function fetchSheetData() {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const raw = await r.json();
-  // Apps Script returns array of arrays — already parsed
+  // Yeni format: { 'GÜNLÜK': [[...],[...]], 'HAFTALIK': [[...],[...]], ... }
+  // Eski format: [[...],[...]] (flat array)
+  if (Array.isArray(raw)) {
+    // Eski format — geriye dönük uyumluluk
+    return { _flat: raw };
+  }
   return raw;
 }
 
@@ -792,7 +797,7 @@ function mkSection(title, color) {
   </div>`;
 }
 
-function renderSatis(rows) {
+function renderSatis(rows, gunlukHeaderRow) {
   const ot1  = findRow(rows,'ÖT-G1');
   const ot4  = findRow(rows,'ÖT-G4');
   const ot7  = findRow(rows,'ÖT-G7');
@@ -808,48 +813,12 @@ function renderSatis(rows) {
   const ot17 = findRow(rows,'ÖT-G17');
   const ot18 = findRow(rows,'ÖT-G18');
 
-  // Günlük tarih etiketlerini header satırından oku
+  // Tarih başlıklarını GÜNLÜK sheet header satırından oku
+  // gunlukHeaderRow doğrudan geçilmişse onu kullan, yoksa rows'dan bul
   const aylarKisa = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
   const aylarTam  = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
-  function getGunlukLabels(row) {
-    if (!row) return [];
-    return row.slice(6).map(v => {
-      if (!v) return null;
-      if (v instanceof Date) {
-        return v.getDate() + ' ' + aylarKisa[v.getMonth()];
-      }
-      const s = String(v).trim();
-      if (!s) return null;
-      // "27 Nisan  26" → "27 Nis" formatına çevir
-      for (let i = 0; i < aylarTam.length; i++) {
-        if (s.indexOf(aylarTam[i]) > -1) {
-          const gun = parseInt(s);
-          if (!isNaN(gun)) return gun + ' ' + aylarKisa[i];
-        }
-      }
-      // Zaten kısa formatta ise olduğu gibi döndür
-      return s;
-    });
-  }
-
-  // Tarih başlıklarını GÜNLÜK METRİK-ID header satırından oku
-  // ÖT-G1 satırının index'ini bul, ondan önce gelen METRİK-ID satırı GÜNLÜK header'ı
-  const ot1Idx = rows.findIndex(r => {
-    const v = String(r[0]||'').trim();
-    return v === '\u00d6T-G1' || v === 'ÖT-G1' || v.replace(/\u00d6/g,'Ö') === 'ÖT-G1';
-  });
-  let gunlukHeader = null;
-  if (ot1Idx > 0) {
-    for (let i = ot1Idx - 1; i >= 0; i--) {
-      const v = String(rows[i][0]||'').trim();
-      if (v === 'METRİK-ID' || v === 'METRIK-ID' || v.toUpperCase().includes('METRIK')) {
-        gunlukHeader = rows[i]; break;
-      }
-    }
-  }
-  // Eğer header bulunamazsa ot1 satırının uzunluğunu kullan, etiketler G1,G2... olsun
-  const gunLabels = gunlukHeader ? gunlukHeader.slice(6).map(v => {
+  function parseLabel(v) {
     if (!v) return null;
     if (v instanceof Date) return v.getDate() + ' ' + aylarKisa[v.getMonth()];
     const s = String(v).trim();
@@ -860,8 +829,11 @@ function renderSatis(rows) {
         if (!isNaN(gun)) return gun + ' ' + aylarKisa[i];
       }
     }
-    return s;
-  }) : (ot1 ? ot1.slice(6).map((_, i) => 'G'+(i+1)) : []);
+    return null; // Tarih değilse null
+  }
+
+  const headerRow = gunlukHeaderRow || null;
+  const gunLabels = headerRow ? headerRow.slice(6).map(parseLabel) : (ot1 ? ot1.slice(6).map((_,i) => 'G'+(i+1)) : []);
 
   // Tüm dizileri aynı length'te tut — null değerler korunsun
   const allLen = gunLabels.length;
@@ -2378,10 +2350,38 @@ function renderVeriYonetimi(rows) {
 
 async function loadData() {
   try {
-    const rows = await fetchSheetData();
+    const data = await fetchSheetData();
+
+    // Yeni format: { 'GÜNLÜK': [[header],[row1],...], 'HAFTALIK': [...], ... }
+    // Her render fonksiyonu tüm satırları alıyor — şimdi sheet'leri birleştirip gönder
+    // ama GÜNLÜK sheet'in header satırını koru
+    let rows;
+    if (data._flat) {
+      // Eski format — flat array
+      rows = data._flat;
+    } else {
+      // Yeni format — sheet isimleriyle ayrılmış
+      // Her sheet'in tüm satırlarını (header dahil) birleştir
+      rows = [];
+      const sheetOrder = ['GÜNLÜK','HAFTALIK','AYLIK','YILLIK'];
+      for (const name of sheetOrder) {
+        if (data[name]) rows = rows.concat(data[name]);
+      }
+      // Eksik sheet varsa diğerlerini de ekle
+      for (const name of Object.keys(data)) {
+        if (!sheetOrder.includes(name)) rows = rows.concat(data[name]);
+      }
+    }
+
+    // GÜNLÜK sheet header satırını bul
+    let gunlukHeaderRow = null;
+    if (!data._flat && data['GÜNLÜK'] && data['GÜNLÜK'].length > 0) {
+      gunlukHeaderRow = data['GÜNLÜK'][0]; // İlk satır header
+    }
+
     document.getElementById('last-update').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr');
     renderGenel(rows);
-    renderSatis(rows);
+    renderSatis(rows, gunlukHeaderRow);
     renderCagri(rows);
     renderFirma(rows);
     renderIK(rows);
