@@ -571,6 +571,33 @@ function doughnutChart(id, labels, data, colors) {
 }
 
 // ─── PAGE RENDERERS ──────────────────────────────────────
+
+// Hafta filtresi widget'ı
+function mkWeekFilter(pageId, onChangeFn) {
+  return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <div style="font-size:12px;color:var(--muted);font-family:var(--mono);">HAFTA SEÇ:</div>
+    <select id="${pageId}-week-select" onchange="${onChangeFn}()"
+      style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;outline:none;">
+      ${DYNAMIC_WEEKS.map((w,i)=>`<option value="${i}">${w}</option>`).join('')}
+    </select>
+  </div>`;
+}
+
+// Seçilen haftanın değerini al
+function getWeekVal(arr, idx) {
+  if (!arr || idx == null || arr[idx] == null) return null;
+  return arr[idx];
+}
+
+// Son veri girilen hafta index'ini bul
+function getLastWeekIdx(arr) {
+  if (!arr) return Math.max(0, DYNAMIC_WEEKS.length - 1);
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i] != null && arr[i] !== '' && arr[i] !== 0) return i;
+  }
+  return 0;
+}
+
 function findRow(rows, id) {
   return rows.find(r => r.some(cell => String(cell).trim() === id));
 }
@@ -825,7 +852,7 @@ function renderSatis(rows) {
   ];
 
   // Veriler window'a kaydet, filtre değişince güncelle
-  window._satisData = { cleanLabels, sasZiyaret, sasSure, sasYeni, sasYenileme, tesGorusme, tesSure, tesYeni, tesYenileme, sadFirma, sadRandevu, mosZiyaret, mosYeni };
+  window._satisData = { cleanLabels, sasZiyaret, sasSure, sasYeni, sasYenileme, tesGorusme, tesSure, tesYeni, tesYenileme, sadFirma, sadSure, sadRandevu, mosZiyaret, mosSure, mosYeni };
 
   const filterBar = `
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
@@ -839,7 +866,7 @@ function renderSatis(rows) {
 
   document.getElementById('satis-content').innerHTML = filterBar + `
     ${mkSection('SAS — Saha Satış', '#6c63ff')}
-    <div class="cards-grid">
+    <div id="satis-cards-sas" class="cards-grid">
       ${mkCard('ZİYARET (TOPLAM)', last(sasZiyaret) ? last(sasZiyaret).toLocaleString('tr') : '—', cleanLabels[cleanLabels.length-1]||'Son gün', 'neutral')}
       ${mkCard('ZİYARET SÜRESİ', last(sasSure) ? last(sasSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
       ${mkCard('SATIŞ YENİ', fmtTL(sumArr(sasYeni.filter(v=>v>0))), 'Toplam dönem', 'up')}
@@ -861,7 +888,7 @@ function renderSatis(rows) {
     </div>
 
     ${mkSection('TES — Telefon Satış', '#00d4aa')}
-    <div class="cards-grid">
+    <div id="satis-cards-tes" class="cards-grid">
       ${mkCard('GÖRÜŞME ADEDİ', last(tesGorusme) ? last(tesGorusme).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
       ${mkCard('GÖRÜŞME SÜRESİ', last(tesSure) ? last(tesSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
       ${mkCard('SATIŞ YENİ', fmtTL(sumArr(tesYeni.filter(v=>v>0))), 'Toplam dönem', 'up')}
@@ -883,7 +910,7 @@ function renderSatis(rows) {
     </div>
 
     ${mkSection('SAD — Saha Arama & Demo', '#ffa94d')}
-    <div class="cards-grid">
+    <div id="satis-cards-sad" class="cards-grid">
       ${mkCard('GÖRÜŞÜLEN FİRMA', last(sadFirma) ? last(sadFirma).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
       ${mkCard('GÖRÜŞME SÜRESİ', last(sadSure) ? last(sadSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
       ${mkCard('RANDEVU ADEDİ', last(sadRandevu) ? last(sadRandevu).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
@@ -901,7 +928,7 @@ function renderSatis(rows) {
     </div>
 
     ${mkSection('MOS — Mobil Saha', '#ff6b6b')}
-    <div class="cards-grid">
+    <div id="satis-cards-mos" class="cards-grid">
       ${mkCard('ZİYARET ADEDİ', last(mosZiyaret) ? last(mosZiyaret).toLocaleString('tr') : '—', 'Son gün', 'neutral')}
       ${mkCard('ZİYARET SÜRESİ', last(mosSure) ? last(mosSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral')}
       ${mkCard('SATIŞ YENİ', fmtTL(sumArr(mosYeni.filter(v=>v>0))), 'Toplam dönem', 'up')}
@@ -937,15 +964,55 @@ function renderSatis(rows) {
       const aylarTR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
       const monthIdx = aylarTR.indexOf(parts[1]);
       if (monthIdx === -1) { indices.push(i); return; }
-      const year = new Date().getFullYear();
-      const date = new Date(year, monthIdx, parseInt(parts[0]));
-      if ((!fromDate || date >= fromDate) && (!toDate || date <= toDate)) {
+      // Yılı belirle — Ocak-Şubat büyük ihtimalle gelecek yıl değil
+      const currentYear = new Date().getFullYear();
+      const date = new Date(currentYear, monthIdx, parseInt(parts[0]));
+      // fromDate/toDate ile karşılaştır — saat sıfırla
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const from = fromDate ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()) : null;
+      const to   = toDate   ? new Date(toDate.getFullYear(),   toDate.getMonth(),   toDate.getDate())   : null;
+      if ((!from || dateOnly >= from) && (!to || dateOnly <= to)) {
         indices.push(i);
       }
     });
 
     const labels = indices.map(i => d.cleanLabels[i]);
-    const sl = arr => indices.map(i => arr[i] != null ? arr[i] : null);
+    const sl = arr => indices.map(i => (arr && arr[i] != null) ? arr[i] : null);
+    const sumFiltered = arr => indices.reduce((s,i) => s + (arr[i]>0 ? arr[i] : 0), 0);
+    const lastFiltered = arr => { for(let k=indices.length-1;k>=0;k--) { if(arr[indices[k]]>0) return arr[indices[k]]; } return null; };
+
+    // Kartları güncelle
+    const ziyLast = lastFiltered(d.sasZiyaret);
+    const sureLast = lastFiltered(d.sasSure);
+    document.querySelector('[data-card="sas-ziyaret"]') && (document.querySelector('[data-card="sas-ziyaret"]').querySelector('.metric-value').textContent = ziyLast ? ziyLast.toLocaleString('tr') : '—');
+
+    // Kartları yeniden render et
+    const cards = document.getElementById('satis-cards-sas');
+    if(cards) cards.innerHTML =
+      mkCard('ZİYARET (TOPLAM)', ziyLast ? ziyLast.toLocaleString('tr') : '—', labels[labels.length-1]||'Son gün', 'neutral') +
+      mkCard('ZİYARET SÜRESİ', sureLast ? sureLast.toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.sasYeni)), 'Seçili dönem', 'up') +
+      mkCard('SATIŞ YENİLEME', fmtTL(sumFiltered(d.sasYenileme)), 'Seçili dönem', 'up');
+
+    const cardsTes = document.getElementById('satis-cards-tes');
+    if(cardsTes) cardsTes.innerHTML =
+      mkCard('GÖRÜŞME ADEDİ', lastFiltered(d.tesGorusme) ? lastFiltered(d.tesGorusme).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
+      mkCard('GÖRÜŞME SÜRESİ', lastFiltered(d.tesSure) ? lastFiltered(d.tesSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.tesYeni)), 'Seçili dönem', 'up') +
+      mkCard('SATIŞ YENİLEME', fmtTL(sumFiltered(d.tesYenileme)), 'Seçili dönem', 'up');
+
+    const cardsSad = document.getElementById('satis-cards-sad');
+    if(cardsSad) cardsSad.innerHTML =
+      mkCard('GÖRÜŞÜLEN FİRMA', lastFiltered(d.sadFirma) ? lastFiltered(d.sadFirma).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
+      mkCard('GÖRÜŞME SÜRESİ', lastFiltered(d.sadSure) ? lastFiltered(d.sadSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('RANDEVU ADEDİ', lastFiltered(d.sadRandevu) ? lastFiltered(d.sadRandevu).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
+      mkCard('TOPLAM FİRMA', sumFiltered(d.sadFirma).toLocaleString('tr'), 'Seçili dönem', 'neutral');
+
+    const cardsMos = document.getElementById('satis-cards-mos');
+    if(cardsMos) cardsMos.innerHTML =
+      mkCard('ZİYARET ADEDİ', lastFiltered(d.mosZiyaret) ? lastFiltered(d.mosZiyaret).toLocaleString('tr') : '—', 'Son gün', 'neutral') +
+      mkCard('ZİYARET SÜRESİ', lastFiltered(d.mosSure) ? lastFiltered(d.mosSure).toLocaleString('tr')+' dk' : '—', 'Son gün', 'neutral') +
+      mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.mosYeni)), 'Seçili dönem', 'up');
 
     // Grafikleri yeniden çiz
     ['c-sas-visit','c-sas-ciro','c-tes-gorusme','c-tes-ciro','c-sad-firma','c-sad-randevu','c-mos-visit','c-mos-ciro'].forEach(id => {
@@ -953,9 +1020,11 @@ function renderSatis(rows) {
       if(el) { const chart = Chart.getChart(el); if(chart) chart.destroy(); }
     });
 
-    if (sl(d.sasZiyaret).length) barChart('c-sas-visit', labels, [{ data: sl(d.sasZiyaret), backgroundColor: 'rgba(108,99,255,0.65)' }]);
+    if (labels.length === 0) return;
+
+    if (sl(d.sasZiyaret).some(v=>v)) barChart('c-sas-visit', labels, [{ data: sl(d.sasZiyaret), backgroundColor: 'rgba(108,99,255,0.65)' }]);
     const sasY = sl(d.sasYeni); const sasYen = sl(d.sasYenileme);
-    if (sasY.length || sasYen.length) {
+    if (sasY.some(v=>v) || sasYen.some(v=>v)) {
       const el = document.getElementById('c-sas-ciro');
       if(el) new Chart(el, { type:'bar', data:{ labels, datasets:[
         {label:'Yeni', data:sasY, backgroundColor:'rgba(108,99,255,0.7)'},
@@ -963,9 +1032,9 @@ function renderSatis(rows) {
       ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
         scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{maxRotation:45}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtTL(v)}}}}});
     }
-    if (sl(d.tesGorusme).filter(v=>v).length) barChart('c-tes-gorusme', labels, [{ data: sl(d.tesGorusme), backgroundColor: 'rgba(0,212,170,0.65)' }]);
+    if (sl(d.tesGorusme).some(v=>v)) barChart('c-tes-gorusme', labels, [{ data: sl(d.tesGorusme), backgroundColor: 'rgba(0,212,170,0.65)' }]);
     const tesY = sl(d.tesYeni); const tesYen = sl(d.tesYenileme);
-    if (tesY.length || tesYen.length) {
+    if (tesY.some(v=>v) || tesYen.some(v=>v)) {
       const el = document.getElementById('c-tes-ciro');
       if(el) new Chart(el, { type:'bar', data:{ labels, datasets:[
         {label:'Yeni', data:tesY, backgroundColor:'rgba(0,212,170,0.7)'},
@@ -973,10 +1042,10 @@ function renderSatis(rows) {
       ]}, options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
         scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{maxRotation:45}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{callback:v=>fmtTL(v)}}}}});
     }
-    if (sl(d.sadFirma).filter(v=>v).length)   barChart('c-sad-firma',   labels, [{ data: sl(d.sadFirma),   backgroundColor: 'rgba(255,169,77,0.65)' }]);
-    if (sl(d.sadRandevu).filter(v=>v).length) barChart('c-sad-randevu', labels, [{ data: sl(d.sadRandevu), backgroundColor: 'rgba(255,169,77,0.45)' }]);
-    if (sl(d.mosZiyaret).filter(v=>v).length) barChart('c-mos-visit',   labels, [{ data: sl(d.mosZiyaret), backgroundColor: 'rgba(255,107,107,0.65)' }]);
-    if (sl(d.mosYeni).filter(v=>v).length)    barChart('c-mos-ciro',    labels, [{ data: sl(d.mosYeni),    backgroundColor: 'rgba(255,107,107,0.5)' }]);
+    if (sl(d.sadFirma).some(v=>v))   barChart('c-sad-firma',   labels, [{ data: sl(d.sadFirma),   backgroundColor: 'rgba(255,169,77,0.65)' }]);
+    if (sl(d.sadRandevu).some(v=>v)) barChart('c-sad-randevu', labels, [{ data: sl(d.sadRandevu), backgroundColor: 'rgba(255,169,77,0.45)' }]);
+    if (sl(d.mosZiyaret).some(v=>v)) barChart('c-mos-visit',   labels, [{ data: sl(d.mosZiyaret), backgroundColor: 'rgba(255,107,107,0.65)' }]);
+    if (sl(d.mosYeni).some(v=>v))    barChart('c-mos-ciro',    labels, [{ data: sl(d.mosYeni),    backgroundColor: 'rgba(255,107,107,0.5)' }]);
   };
 
   window.resetSatisFilter = function() {
@@ -1067,21 +1136,18 @@ function renderCagri(rows) {
   const dtH15 = findRow(rows,'DT-H15');
   const dtH19 = findRow(rows,'DT-H19');
 
-  const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
-  const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? fmtPct(v) : '—'; };
+  const dtH1d  = dtH1  ? dtH1.slice(6).map(v=>parseNum(v))  : [];
+  const dtH2d  = dtH2  ? dtH2.slice(6).map(v=>parseNum(v))  : [];
+  const dtH19d = dtH19 ? dtH19.slice(6).map(v=>parseNum(v)) : [];
+  const dtH4d  = dtH4  ? dtH4.slice(6).map(v => { const s = String(v||'').replace('%','').replace(',','.').trim(); const n = parseFloat(s); return (isNaN(n)||n>100) ? null : n; }) : [];
+  const dtH15d = dtH15 ? dtH15.slice(6).map(v => { const s = String(v||'').replace('%','').replace(',','.').trim(); const n = parseFloat(s); return (isNaN(n)||n>100) ? null : n; }) : [];
 
-  const dtH19d = dtH19 ? getNumericValues(dtH19).filter(v=>v>0) : [];
-  const dtH4d  = dtH4  ? dtH4.slice(6).map(v => { const s = String(v||'').replace('%','').replace(',','.').trim(); const n = parseFloat(s); return (isNaN(n)||n>100) ? null : n; }).filter(v=>v!==null) : [];
-  const dtH15d = dtH15 ? dtH15.slice(6).map(v => { const s = String(v||'').replace('%','').replace(',','.').trim(); const n = parseFloat(s); return (isNaN(n)||n>100) ? null : n; }).filter(v=>v!==null) : [];
+  const defaultIdx = getLastWeekIdx(dtH19d);
 
-  document.getElementById('cagri-content').innerHTML = `
-    <div class="cards-grid">
-      ${mkCard('ÇIKARILAN TEKLİF', g(dtH19), 'Son hafta', 'neutral')}
-      ${mkCard('YENİ ÜYELİK KARŞILAMA', g(dtH1), 'Son hafta', 'neutral')}
-      ${mkCard('FEEDBACK ALINAN ÇİFT', g(dtH2), 'Son hafta', 'neutral')}
-      ${mkCard('ÜYE YAPMA ORANI', gPct(dtH4), '↑ İyi', 'up')}
-      ${mkCard('TEKLİF VERİMLİLİK', gPct(dtH15), '↑ Yükseliş', 'up')}
-    </div>
+  window._cagriData = { dtH1d, dtH2d, dtH19d, dtH4d, dtH15d };
+
+  document.getElementById('cagri-content').innerHTML = mkWeekFilter('cagri', 'updateCagri') + `
+    <div id="cagri-cards" class="cards-grid"></div>
     <div class="charts-grid">
       <div class="chart-card">
         <div class="chart-header"><div class="chart-title">Haftalık Çıkarılan Teklif</div><div class="chart-sub">DT-H19</div></div>
@@ -1098,8 +1164,34 @@ function renderCagri(rows) {
     </div>
   `;
 
+  window.updateCagri = function() {
+    const idx = parseInt(document.getElementById('cagri-week-select').value);
+    const d = window._cagriData;
+    const w = DYNAMIC_WEEKS[idx] || '';
+    const teklif = getWeekVal(d.dtH19d, idx);
+    const uyelik = getWeekVal(d.dtH1d, idx);
+    const feedback = getWeekVal(d.dtH2d, idx);
+    const uyeOran = getWeekVal(d.dtH4d, idx);
+    const teklifVer = getWeekVal(d.dtH15d, idx);
+
+    document.getElementById('cagri-cards').innerHTML =
+      mkCard('ÇIKARILAN TEKLİF', teklif ? teklif.toLocaleString('tr') : '—', w, 'neutral') +
+      mkCard('YENİ ÜYELİK KARŞILAMA', uyelik ? uyelik.toLocaleString('tr') : '—', w, 'neutral') +
+      mkCard('FEEDBACK ALINAN ÇİFT', feedback ? feedback.toLocaleString('tr') : '—', w, 'neutral') +
+      mkCard('ÜYE YAPMA ORANI', uyeOran ? fmtPct(uyeOran) : '—', '↑ İyi', 'up') +
+      mkCard('TEKLİF VERİMLİLİK', teklifVer ? fmtPct(teklifVer) : '—', '↑ Yükseliş', 'up');
+  };
+
+  // Dropdown'u default index'e ayarla
+  setTimeout(() => {
+    const sel = document.getElementById('cagri-week-select');
+    if (sel) { sel.value = defaultIdx; window.updateCagri(); }
+  }, 0);
+
+  // Grafikler — tüm haftalar, gerçek etiketler
+  const validLen = dtH19d.filter(v=>v!=null).length;
   if (dtH19d.length) barChart('c-teklif', DYNAMIC_WEEKS.slice(0, dtH19d.length),
-    [{ data: dtH19d, backgroundColor: dtH19d.map((_,i) => i === dtH19d.length-1 ? 'rgba(0,212,170,0.8)' : 'rgba(108,99,255,0.6)') }]);
+    [{ data: dtH19d, backgroundColor: dtH19d.map((_,i)=>i===defaultIdx?'rgba(0,212,170,0.8)':'rgba(108,99,255,0.6)') }]);
 
   if (dtH4d.length || dtH15d.length) {
     lineChart('c-verimlilik', DYNAMIC_WEEKS.slice(0, Math.max(dtH4d.length, dtH15d.length)), [
@@ -1110,35 +1202,32 @@ function renderCagri(rows) {
 }
 
 function renderFirma(rows) {
-  const fi1r = findRow(rows,'Fİ-H1');
-  const fi2r = findRow(rows,'Fİ-H2');
-  const fi3r = findRow(rows,'Fİ-H3');
-  const fi4r = findRow(rows,'Fİ-H4');
-  const fi5r = findRow(rows,'Fİ-H5');
+  const fi1r  = findRow(rows,'Fİ-H1');
+  const fi2r  = findRow(rows,'Fİ-H2');
+  const fi3r  = findRow(rows,'Fİ-H3');
+  const fi4r  = findRow(rows,'Fİ-H4');
+  const fi5r  = findRow(rows,'Fİ-H5');
   const fi11r = findRow(rows,'Fİ-H11');
-  const lastYesilF   = fi1r  ? getLastNonEmpty(fi1r)  : null;
-  const lastSariF    = fi2r  ? getLastNonEmpty(fi2r)   : null;
-  const lastTuruncuF = fi3r  ? getLastNonEmpty(fi3r)   : null;
-  const lastKirmiziF = fi4r  ? getLastNonEmpty(fi4r)   : null;
-  const lastWelcomeF = fi5r  ? getLastNonEmpty(fi5r)   : null;
-  const toplam = (lastYesilF||0)+(lastSariF||0)+(lastTuruncuF||0)+(lastKirmiziF||0)+(lastWelcomeF||0) || 2379;
-  document.getElementById('firma-content').innerHTML = `
-    <div class="cards-grid">
-      ${mkCard('YEŞİL FİRMA', lastYesilF ? lastYesilF.toLocaleString('tr') : '—', fmtPct(lastYesilF ? (lastYesilF/toplam*100) : null)+' oran', 'up')}
-      ${mkCard('SARI FİRMA', lastSariF ? lastSariF.toLocaleString('tr') : '—', fmtPct(lastSariF ? (lastSariF/toplam*100) : null)+' oran', 'neutral')}
-      ${mkCard('TURUNCU FİRMA', lastTuruncuF ? lastTuruncuF.toLocaleString('tr') : '—', fmtPct(lastTuruncuF ? (lastTuruncuF/toplam*100) : null)+' oran', 'neutral')}
-      ${mkCard('KIRMIZI FİRMA', lastKirmiziF ? lastKirmiziF.toLocaleString('tr') : '—', fmtPct(lastKirmiziF ? (lastKirmiziF/toplam*100) : null)+' oran', 'down')}
-      ${mkCard('WELCOME', lastWelcomeF ? lastWelcomeF.toLocaleString('tr') : '—', fmtPct(lastWelcomeF ? (lastWelcomeF/toplam*100) : null)+' oran', 'neutral')}
-      ${mkCard('TOPLAM', toplam.toLocaleString('tr'), 'Son hafta', 'neutral')}
-      ${mkCard('TOPLAM', '2.379', '6-12 Nis 2026', 'neutral')}
-    </div>
+
+  const fi1d  = fi1r  ? fi1r.slice(6).map(v=>parseNum(v))  : [];
+  const fi2d  = fi2r  ? fi2r.slice(6).map(v=>parseNum(v))  : [];
+  const fi3d  = fi3r  ? fi3r.slice(6).map(v=>parseNum(v))  : [];
+  const fi4d  = fi4r  ? fi4r.slice(6).map(v=>parseNum(v))  : [];
+  const fi5d  = fi5r  ? fi5r.slice(6).map(v=>parseNum(v))  : [];
+  const fi11d = fi11r ? fi11r.slice(6).map(v=>parseNum(v)) : [];
+
+  const defaultIdx = getLastWeekIdx(fi1d);
+  window._firmaData = { fi1d, fi2d, fi3d, fi4d, fi5d, fi11d };
+
+  document.getElementById('firma-content').innerHTML = mkWeekFilter('firma', 'updateFirma') + `
+    <div id="firma-cards" class="cards-grid"></div>
     <div class="charts-grid">
       <div class="chart-card">
         <div class="chart-header"><div class="chart-title">Yeşil Firma Oranı Trendi</div><div class="chart-sub">Fİ-H6 · Haftalık %</div></div>
         ${mkChart('c-yesil-trend')}
       </div>
       <div class="chart-card">
-        <div class="chart-header"><div class="chart-title">Flag Dağılımı</div><div class="chart-sub">6-12 Nis 2026</div></div>
+        <div class="chart-header"><div class="chart-title">Flag Dağılımı</div><div class="chart-sub">Son hafta</div></div>
         ${mkChart('c-flags')}
       </div>
     </div>
@@ -1152,35 +1241,53 @@ function renderFirma(rows) {
       ${mkChart('c-renk-trend', 180)}
     </div>
   `;
+
+  window.updateFirma = function() {
+    const idx = parseInt(document.getElementById('firma-week-select').value);
+    const d = window._firmaData;
+    const w = DYNAMIC_WEEKS[idx] || '';
+    const y = getWeekVal(d.fi1d, idx); const s = getWeekVal(d.fi2d, idx);
+    const t = getWeekVal(d.fi3d, idx); const k = getWeekVal(d.fi4d, idx);
+    const wl = getWeekVal(d.fi5d, idx); const top = getWeekVal(d.fi11d, idx);
+    const toplam = (y||0)+(s||0)+(t||0)+(k||0)+(wl||0) || top || 1;
+    const pct = v => v ? fmtPct(Math.round(v/toplam*10000)/100) : '—';
+    document.getElementById('firma-cards').innerHTML =
+      mkCard('YEŞİL FİRMA',  y  ? y.toLocaleString('tr')  : '—', pct(y)+' oran',  'up') +
+      mkCard('SARI FİRMA',   s  ? s.toLocaleString('tr')  : '—', pct(s)+' oran',  'neutral') +
+      mkCard('TURUNCU FİRMA',t  ? t.toLocaleString('tr')  : '—', pct(t)+' oran',  'neutral') +
+      mkCard('KIRMIZI FİRMA',k  ? k.toLocaleString('tr')  : '—', pct(k)+' oran',  'down') +
+      mkCard('WELCOME',      wl ? wl.toLocaleString('tr') : '—', pct(wl)+' oran', 'neutral') +
+      mkCard('TOPLAM',       top ? top.toLocaleString('tr') : '—', w, 'neutral');
+  };
+
+  setTimeout(() => {
+    const sel = document.getElementById('firma-week-select');
+    if(sel) { sel.value = defaultIdx; window.updateFirma(); }
+  }, 0);
+
   const fi6r = findRow(rows, 'Fİ-H6');
   const yesilTrend = fi6r ? fi6r.slice(6).map(v => {
     const s = String(v||'').replace('%','').replace(',','.').trim();
     const n = parseFloat(s);
     if (isNaN(n)) return null;
     return n > 1 ? Math.round(n*100)/100 : Math.round(n*10000)/100;
-  }).filter(v => v !== null) : [57.35,59.59,58.56,60.50,60.01,60.53];
+  }).filter(v => v !== null) : [];
 
   lineChart('c-yesil-trend', DYNAMIC_WEEKS.slice(0, yesilTrend.length),
     [{ data: yesilTrend, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.07)' }]);
-  barChart('c-flags',
-    ['Lead Count','Review','Campaign','Gallery','Resp Rate','Resp Time','CR'],
-    [{ data: [
-      findRow(rows,'Fİ-H7') ? getLastNonEmpty(findRow(rows,'Fİ-H7'))||0 : 1511,
-      findRow(rows,'Fİ-H8') ? getLastNonEmpty(findRow(rows,'Fİ-H8'))||0 : 672,
-      findRow(rows,'Fİ-H9') ? getLastNonEmpty(findRow(rows,'Fİ-H9'))||0 : 881,
-      findRow(rows,'Fİ-H10') ? getLastNonEmpty(findRow(rows,'Fİ-H10'))||0 : 574,
-      findRow(rows,'Fİ-H12') ? getLastNonEmpty(findRow(rows,'Fİ-H12'))||0 : 432,
-      findRow(rows,'Fİ-H13') ? getLastNonEmpty(findRow(rows,'Fİ-H13'))||0 : 520,
-      findRow(rows,'Fİ-H14') ? getLastNonEmpty(findRow(rows,'Fİ-H14'))||0 : 620
-    ], backgroundColor: ['#6c63ff','#ff6b6b','#ffa94d','#00d4aa','#51cf66','#e8590c','#cc5de8'].map(c=>c+'bb') }]);
-  const yesilD = fi1r ? getNumericValues(fi1r) : [1362,1417,1372,1420,1427,1440];
-  const sariD  = fi2r ? getNumericValues(fi2r) : [624,582,591,564,554,555];
-  const kirmD  = fi4r ? getNumericValues(fi4r) : [156,146,158,150,155,141];
-  const renkLen = Math.max(yesilD.length, sariD.length, kirmD.length);
+
+  const lastIdx = getLastWeekIdx(fi1d);
+  doughnutChart('c-flags',
+    ['Yeşil','Sarı','Turuncu','Kırmızı','Welcome'],
+    [fi1d[lastIdx]||0, fi2d[lastIdx]||0, fi3d[lastIdx]||0, fi4d[lastIdx]||0, fi5d[lastIdx]||0],
+    ['#51cf66','#ffa94d','#e8590c','#ff6b6b','#6c63ff']
+  );
+
+  const renkLen = Math.max(fi1d.length, fi2d.length, fi4d.length);
   lineChart('c-renk-trend', DYNAMIC_WEEKS.slice(0, renkLen), [
-    { data: yesilD, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
-    { data: sariD,  borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
-    { data: kirmD,  borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
+    { data: fi1d, borderColor: '#51cf66', backgroundColor: 'rgba(81,207,102,0.05)' },
+    { data: fi2d, borderColor: '#ffa94d', backgroundColor: 'rgba(255,169,77,0.05)' },
+    { data: fi4d, borderColor: '#ff6b6b', backgroundColor: 'rgba(255,107,107,0.05)' }
   ]);
 }
 
@@ -1203,7 +1310,7 @@ function renderIK(rows) {
 
   const g    = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
   const gPct = r => { const v = getLastNonEmpty(r); return v !== null ? fmtPct(v) : '—'; };
-  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
 
   const asH1d = asH1 ? getNumericValues(asH1).filter(v=>v>0) : [];
   const asH2d = asH2 ? getNumericValues(asH2).filter(v=>v>0) : [];
@@ -1596,7 +1703,7 @@ function renderDijital(rows) {
   const udA6 = findRow(rows,'UD-A6');
 
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
-  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
 
   const usH1d = usH1 ? usH1.slice(6).map(v => {
     const s = String(v||'').replace(/\./g,'').replace(',','.').trim();
@@ -1754,7 +1861,7 @@ function renderPazarlama(rows) {
   const byA15 = findRow(rows,'BY-A15'); // Green Screen Çekim
 
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
-  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
   const glblA = arr => Array.from({length:arr.length},(_,i)=>`A${i+1}`);
 
   const byH3d = byH3 ? getNumericValues(byH3).filter(v=>v>0) : [];
@@ -1993,7 +2100,7 @@ function renderSatinalma(rows) {
 
 function renderB2B(rows) {
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
-  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
 
   // PÇ — Pelda Şahin
   const pcH1 = findRow(rows,'PÇ-H1'); // Yeni eklenen firma
@@ -2128,7 +2235,7 @@ function renderB2B(rows) {
 
 function renderVeriYonetimi(rows) {
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
-  const glbl = arr => Array.from({length:arr.length},(_,i)=>`H${i+1}`);
+  const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
 
   // GÖ — Gözde Öktem
   const goH1 = findRow(rows,'GO-H1'); // Cleansing
