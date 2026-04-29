@@ -953,18 +953,18 @@ function renderSatis(rows) {
     let fromDate = fromVal ? new Date(fromVal + 'T00:00:00') : null;
     let toDate   = toVal   ? new Date(toVal   + 'T23:59:59') : null;
 
-    // Etiketlere göre filtrele
+    const aylarTR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+    const refYear = fromDate ? fromDate.getFullYear() : new Date().getFullYear();
+
+    // Sadece null olmayan etiketleri, tarih aralığına göre filtrele
     const indices = [];
     d.cleanLabels.forEach((lbl, i) => {
-      if (!lbl) return;
-      // "15 Mar" → tarihe çevir
+      if (!lbl) return; // null etiketleri atla
+      if (!fromDate && !toDate) { indices.push(i); return; } // filtre yoksa hepsini al
       const parts = lbl.trim().split(' ');
       if (parts.length < 2) { indices.push(i); return; }
-      const aylarTR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
       const monthIdx = aylarTR.indexOf(parts[1]);
       if (monthIdx === -1) { indices.push(i); return; }
-      // Yıl tahmini: filtre tarihinin yılını kullan
-      const refYear = fromDate ? fromDate.getFullYear() : new Date().getFullYear();
       const dateOnly = new Date(refYear, monthIdx, parseInt(parts[0]));
       const from = fromDate ? new Date(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate()) : null;
       const to   = toDate   ? new Date(toDate.getFullYear(),   toDate.getMonth(),   toDate.getDate())   : null;
@@ -973,7 +973,7 @@ function renderSatis(rows) {
       }
     });
 
-    const labels = indices.map(i => d.cleanLabels[i]).filter(Boolean);
+    const labels = indices.map(i => d.cleanLabels[i]);
     const sl = arr => indices.map(i => (arr && arr[i] != null) ? arr[i] : null);
     const sumFiltered = arr => indices.reduce((s,i) => s + ((arr[i]!=null&&arr[i]>0) ? arr[i] : 0), 0);
     const lastFiltered = arr => { for(let k=indices.length-1;k>=0;k--) { const v=arr[indices[k]]; if(v!=null&&v>0) return v; } return null; };
@@ -1011,10 +1011,20 @@ function renderSatis(rows) {
       mkCard('ZİYARET SÜRESİ', sumFiltered(d.mosSure) ? sumFiltered(d.mosSure).toLocaleString('tr')+' dk' : '—', 'Toplam süre', 'neutral') +
       mkCard('SATIŞ YENİ', fmtTL(sumFiltered(d.mosYeni)), 'Seçili dönem', 'up');
 
-    // Grafikleri yeniden çiz
+    // Grafikleri yeniden çiz — önce mevcut olanları temizle
     ['c-sas-visit','c-sas-ciro','c-tes-gorusme','c-tes-ciro','c-sad-firma','c-sad-randevu','c-mos-visit','c-mos-ciro'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) { const chart = Chart.getChart(el); if(chart) chart.destroy(); }
+      try {
+        const el = document.getElementById(id);
+        if(el) {
+          const chart = Chart.getChart(el);
+          if(chart) { chart.destroy(); }
+          // Canvas'ı sıfırla
+          const parent = el.parentNode;
+          const newCanvas = document.createElement('canvas');
+          newCanvas.id = id;
+          parent.replaceChild(newCanvas, el);
+        }
+      } catch(e) {}
     });
 
     if (labels.length === 0) return;
