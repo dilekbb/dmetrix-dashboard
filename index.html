@@ -451,7 +451,7 @@ function weekLabelFromVal(v) {
   if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return null;
   const up = s.toLocaleUpperCase('tr-TR');
   // "6-12 NİSAN 2026" veya "31 AĞUSTOS-6 EYLÜL 2026" (ay geçişli)
-  const nums = up.match(/\d+/g) || [];
+  const nums = up.replace(/\b\d{4}\b/g,' ').match(/\d+/g) || [];
   const months = [];
   const re = new RegExp(AYLAR_TAM_UP.join('|'), 'g');
   let m; while ((m = re.exec(up)) !== null) months.push(AYLAR_TAM_UP.indexOf(m[0]));
@@ -486,11 +486,46 @@ function goTo(page) {
 }
 
 // ─── SHEET DATA FETCH ────────────────────────────────────
+// ─── "YENİ" SAYFALAR: dönemler satırda, metrikler sütunda → eski şekle (metrik satırda) çevir ───
+function yeniToLegacy(a, minReal) {
+  minReal = minReal || 1;
+  if (!a || a.length < 7 || !Array.isArray(a[0])) return null;
+  const isEmpty = v => v === '' || v === null || v === undefined;
+  const isReal = v => { if (isEmpty(v)) return false; if (String(v).trim() === '-') return false; return parseNum(v) !== 0; };
+  const ncol = Math.max.apply(null, a.map(r => r.length));
+  const cols = [];
+  for (let j = 1; j < ncol; j++) if (String(a[0][j] === undefined || a[0][j] === null ? '' : a[0][j]).trim() !== '') cols.push(j);
+  if (!cols.length) return null;
+  const periods = a.slice(6);
+  let last = -1;
+  periods.forEach((r, i) => { if (!isEmpty(r[0]) && cols.filter(j => isReal(r[j])).length >= minReal) last = i; });
+  // Tamamen boş (hiç hücresi dolu olmayan) ara dönemleri atla; ör. sheet'teki hatalı/boş hafta satırı
+  const used = periods.slice(0, last + 1).filter(r => cols.some(j => !isEmpty(r[j])));
+  const header = ['METRİK-ID','METRİK ADI','METRİK SORUMLUSU','VERİ GİRİŞ SORUMLUSU','VERİ TİPİ','VERİ BİRİMİ'].concat(used.map(r => r[0]));
+  const out = [header];
+  cols.forEach(j => {
+    const row = [0,1,2,3,4,5].map(k => (a[k] && a[k][j] !== undefined && a[k][j] !== null) ? a[k][j] : '');
+    used.forEach(r => row.push(r[j] === undefined || r[j] === null ? '' : r[j]));
+    out.push(row);
+  });
+  return out;
+}
+function normalizeYeniSheets(raw) {
+  if (!raw || Array.isArray(raw)) return;
+  const map = { 'GÜNLÜK': 'GÜNLÜK YENİ', 'HAFTALIK': 'HAFTALIK YENİ', 'AYLIK': 'AYLIK YENİ', 'YILLIK': 'YILLIK YENİ' };
+  Object.keys(map).forEach(k => {
+    const y = raw[map[k]];
+    if (y) { const t = yeniToLegacy(y, k === 'GÜNLÜK' ? 5 : 1); if (t && t.length > 1) raw[k] = t; }
+    delete raw[map[k]];
+  });
+}
+
 async function fetchSheetData() {
   const url = APPS_SCRIPT_URL;
   const r = await fetch(url);
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const raw = await r.json();
+  normalizeYeniSheets(raw);
   // Yeni format: { 'GÜNLÜK': [[...],[...]], 'HAFTALIK': [[...],[...]], ... }
   // Eski format: [[...],[...]] (flat array)
   if (Array.isArray(raw)) {
@@ -701,14 +736,14 @@ function renderGenel(rows) {
   const fi3  = findRow(rows, 'Fİ-H3');
   const fi4  = findRow(rows, 'Fİ-H4');
 
-  const leads = h1 ? getNumericValues(h1).filter(v => v > 0) : [];
+  const leads = h1 ? h1.slice(6).map(v => { const n = parseNum(v); return n === null || n <= 0 ? null : n; }) : [];
   const convs = h2 ? h2.slice(6).map(v => {
     if (!v || v === '') return null;
     const s = String(v).replace('%','').trim().replace(',','.');
     const n = parseFloat(s);
     if (isNaN(n) || n > 100) return null;
     return n;
-  }).filter(v => v !== null) : [];
+  }) : [];
   const h3vals = h3 ? h3.slice(6).map(v => {
     const s = String(v||'').trim().replace(',','.');
     const n = parseFloat(s);
@@ -733,7 +768,7 @@ function renderGenel(rows) {
   }).filter(Boolean);
 
   // Son veri olan hafta index'i
-  let defaultIdx = leads.length - 1;
+  let defaultIdx = pickWeek(rows, null, ['US-H1','US-H2','US-H3','Fİ-H11','Fİ-H6','Fİ-H1']);
 
   // Seçilen haftanın kartlarını güncelle
   window._genelRows = rows;
