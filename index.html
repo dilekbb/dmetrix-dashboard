@@ -434,45 +434,44 @@ const WEEKS = ['2-8 Mar','9-15 Mar','16-22 Mar','23-29 Mar','30Mar-5Nis','6-12 N
 // Dinamik hafta etiketleri — sheet verisiyle güncellenir
 let DYNAMIC_WEEKS = [...WEEKS];
 
+const AYLAR_KISA = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
+const AYLAR_TAM_UP = ['OCAK','ŞUBAT','MART','NİSAN','MAYIS','HAZİRAN','TEMMUZ','AĞUSTOS','EYLÜL','EKİM','KASIM','ARALIK'];
+let HAFTALIK_HEADER = null; // loadData doldurur: data['HAFTALIK'][0]
+
+function weekLabelFromVal(v) {
+  if (v === null || v === undefined || v === '') return null;
+  if (v instanceof Date) {
+    const day = v.getDay(); const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(v); mon.setDate(v.getDate() + diff);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    return mon.getDate()+'-'+sun.getDate()+' '+AYLAR_KISA[mon.getMonth()];
+  }
+  const s = String(v).trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return null;
+  const up = s.toLocaleUpperCase('tr-TR');
+  // "6-12 NİSAN 2026" veya "31 AĞUSTOS-6 EYLÜL 2026" (ay geçişli)
+  const nums = up.match(/\d+/g) || [];
+  const months = [];
+  const re = new RegExp(AYLAR_TAM_UP.join('|'), 'g');
+  let m; while ((m = re.exec(up)) !== null) months.push(AYLAR_TAM_UP.indexOf(m[0]));
+  if (nums.length >= 2 && months.length >= 1) {
+    const d1 = nums[0], d2 = nums[1];
+    if (months.length >= 2 && months[0] !== months[1]) return d1+' '+AYLAR_KISA[months[0]]+'-'+d2+' '+AYLAR_KISA[months[1]];
+    return d1+'-'+d2+' '+AYLAR_KISA[months[0]];
+  }
+  return s.length > 18 ? null : s;
+}
+
 function getWeekLabels(rows, count) {
   try {
-    const aylarTR = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara'];
-    const aylarTam = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-
-    function labelFromVal(v) {
-      if (!v) return null;
-      if (v instanceof Date) {
-        const d = v;
-        const day = d.getDay(); const diff = day === 0 ? -6 : 1 - day;
-        const mon = new Date(d); mon.setDate(d.getDate() + diff);
-        const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
-        return mon.getDate()+'-'+sun.getDate()+' '+aylarTR[mon.getMonth()];
-      }
-      const s = String(v).trim();
-      if (!s) return null;
-      // ISO string
-      if (s.match(/^\d{4}-\d{2}-\d{2}T/)) return null; // Veri satırı, atla
-      // "2-8 MART 2026" formatı
-      for (let i = 0; i < aylarTam.length; i++) {
-        if (s.toUpperCase().includes(aylarTam[i].toUpperCase())) {
-          const match = s.match(/(\d+)[-–](\d+)/);
-          if (match) return match[1]+'-'+match[2]+' '+aylarTR[i];
-        }
-      }
-      return s.length > 15 ? null : s;
+    let headerRow = HAFTALIK_HEADER;
+    if (!headerRow) {
+      headerRow = rows.find(r => { const v = String(r[0]||'').trim(); return v === 'METRİK-ID' || v === 'METRIK-ID'; });
     }
-
-    // Sadece METRİK-ID satırını bul
-    const headerRow = rows.find(r => {
-      const v = String(r[0]||'').trim();
-      return v === 'METRİK-ID' || v === 'METRIK-ID';
-    });
-
     if (headerRow) {
-      const labels = headerRow.slice(6).map(labelFromVal).filter(Boolean);
-      if (labels.length > 0) {
-        DYNAMIC_WEEKS = labels;
-      }
+      const labels = headerRow.slice(6).map(weekLabelFromVal).filter(Boolean);
+      if (labels.length > 0) DYNAMIC_WEEKS = labels;
     }
   } catch(e) {}
   return count ? DYNAMIC_WEEKS.slice(0, count) : DYNAMIC_WEEKS;
@@ -609,12 +608,12 @@ function doughnutChart(id, labels, data, colors) {
 // ─── PAGE RENDERERS ──────────────────────────────────────
 
 // Hafta filtresi widget'ı
-function mkWeekFilter(pageId, onChangeFn) {
+function mkWeekFilter(pageId, onChangeFn, selIdx) {
   return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
     <div style="font-size:12px;color:var(--muted);font-family:var(--mono);">HAFTA SEÇ:</div>
     <select id="${pageId}-week-select" onchange="${onChangeFn}()"
       style="background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;outline:none;">
-      ${DYNAMIC_WEEKS.map((w,i)=>`<option value="${i}">${w}</option>`).join('')}
+      ${DYNAMIC_WEEKS.map((w,i)=>`<option value="${i}"${i===selIdx?' selected':''}>${w}</option>`).join('')}
     </select>
   </div>`;
 }
@@ -649,6 +648,36 @@ function getNumericValues(row) {
   if (!row) return [];
   // Skip first 6 metadata columns, get all numeric values
   return row.slice(6).map(v => parseNum(v)).filter(v => v !== null && v !== 0 || v === 0);
+}
+
+let AYLIK_HEADER = null;
+const AYLAR_TAM_TC = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+function monthLabelFromVal(v) {
+  if (v === null || v === undefined || v === '') return null;
+  let d = null;
+  if (v instanceof Date) d = new Date(v.getTime());
+  else if (/^\d{4}-\d{2}-\d{2}T/.test(String(v))) { const x = new Date(String(v)); if (!isNaN(x)) d = new Date(x.getTime()+3*3600*1000); }
+  if (d) return AYLAR_TAM_TC[d.getUTCMonth ? (v instanceof Date ? d.getMonth() : d.getUTCMonth()) : d.getMonth()] + ' ' + (v instanceof Date ? d.getFullYear() : d.getUTCFullYear());
+  const t = String(v).trim();
+  return t ? t.toLocaleLowerCase('tr-TR').replace(/(^|\s)(\S)/g,(m,a,b)=>a+b.toLocaleUpperCase('tr-TR')) : null;
+}
+// Satırdaki son dolu aylık değerin ay etiketi
+function aylikLbl(row) {
+  if (!AYLIK_HEADER) return 'Son ay';
+  let idx = -1;
+  if (row) { const vals = row.slice(6).map(v => parseNum(v)); for (let i = vals.length-1; i >= 0; i--) if (vals[i] !== null) { idx = i; break; } }
+  if (idx < 0) { for (let i = AYLIK_HEADER.length-1; i >= 6; i--) if (monthLabelFromVal(AYLIK_HEADER[i])) { idx = i-6; break; } }
+  return (idx >= 0 && monthLabelFromVal(AYLIK_HEADER[idx+6])) || 'Son ay';
+}
+
+// Seçili haftaya göre değer / etiket / varsayılan hafta (en son veri girilen)
+function gw(r, i) { if (!r) return '—'; const v = parseNum(r[6+i]); return v !== null ? v.toLocaleString('tr') : '—'; }
+function wLbl(i) { return DYNAMIC_WEEKS[i] || 'Seçili hafta'; }
+function pickWeek(rows, selIdx, ids) {
+  if (selIdx !== undefined && selIdx !== null && !isNaN(selIdx)) return selIdx;
+  let best = 0;
+  ids.forEach(id => { const r = findRow(rows, id); if (!r) return; const v = r.slice(6); for (let i = v.length-1; i >= 0; i--) { if (parseNum(v[i]) !== null) { if (i > best) best = i; break; } } });
+  return best;
 }
 
 function getLastNonEmpty(row) {
@@ -1142,8 +1171,8 @@ function renderSatis(rows, gunlukHeaderRow) {
       ${mkCard('EĞİTİM KATILIMCI', gBe(beH2) !== '—' ? gBe(beH2) : gBe(beA2), 'Son dönem', 'neutral')}
       ${mkCard('EĞİTİM ADEDİ', gBe(beH3) !== '—' ? gBe(beH3) : gBe(beA3), 'Son dönem', 'neutral')}
       ${mkCard('EĞİTİM SÜRESİ', gBe(beH4) !== '—' ? gBe(beH4)+' dk' : gBe(beA4)+' dk', 'Son dönem', 'neutral')}
-      ${mkCard('AYLIK FİRMA', gBe(beA1), 'Mart 2026', 'neutral')}
-      ${mkCard('AYLIK KATILIMCI', gBe(beA2), 'Mart 2026', 'neutral')}
+      ${mkCard('AYLIK FİRMA', gBe(beA1), aylikLbl(beA1), 'neutral')}
+      ${mkCard('AYLIK KATILIMCI', gBe(beA2), aylikLbl(beA2), 'neutral')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -1160,7 +1189,7 @@ function renderSatis(rows, gunlukHeaderRow) {
       </div>
     </div>
     <div class="table-card">
-      <div class="table-title">Eğitim Aylık Özet — Mart 2026</div>
+      <div class="table-title">Eğitim Aylık Özet — ${aylikLbl(beA1)}</div>
       <table>
         <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Değer</th></tr></thead>
         <tbody>
@@ -1544,14 +1573,14 @@ function renderFinans(rows) {
 
     ${mkSection('Muhasebe', '#ffa94d')}
     <div class="cards-grid">
-      ${mkCard('BANKA İŞLEMLERİ', g(syA1), 'Mart 2026', 'neutral')}
-      ${mkCard('HARCAMA FİŞİ', g(syA2), 'Mart 2026', 'neutral')}
-      ${mkCard('KK POS GEÇİŞ', g(syA6), 'Mart 2026', 'neutral')}
-      ${mkCard('OTOMATİK FATURA', g(syA9), 'Mart 2026', 'neutral')}
-      ${mkCard('REKLAM/BARTER FATURA', g(syA8), 'Mart 2026', 'neutral')}
+      ${mkCard('BANKA İŞLEMLERİ', g(syA1), aylikLbl(syA1), 'neutral')}
+      ${mkCard('HARCAMA FİŞİ', g(syA2), aylikLbl(syA2), 'neutral')}
+      ${mkCard('KK POS GEÇİŞ', g(syA6), aylikLbl(syA6), 'neutral')}
+      ${mkCard('OTOMATİK FATURA', g(syA9), aylikLbl(syA9), 'neutral')}
+      ${mkCard('REKLAM/BARTER FATURA', g(syA8), aylikLbl(syA8), 'neutral')}
     </div>
     <div class="table-card">
-      <div class="table-title">Muhasebe Detay — Mart 2026</div>
+      <div class="table-title">Muhasebe Detay — ${aylikLbl(syA1)}</div>
       <table>
         <thead><tr><th>Metrik</th><th>Değer</th><th>Sorumlu</th></tr></thead>
         <tbody>
@@ -1569,14 +1598,14 @@ function renderFinans(rows) {
 
     ${mkSection('İnsan Kaynakları', '#00d4aa')}
     <div class="cards-grid">
-      ${mkCard('TOPLAM ÇALIŞAN', g(bgA8), 'Mart 2026', 'neutral')}
-      ${mkCard('AYLIK İŞE ALIM', g(bgA1), 'Mart 2026', 'neutral')}
-      ${mkCard('AÇIK POZİSYON', g(bgA2), 'Mart 2026', 'neutral')}
-      ${mkCard('GÖRÜŞME SAYISI', g(bgA3), 'Mart 2026', 'neutral')}
+      ${mkCard('TOPLAM ÇALIŞAN', g(bgA8), aylikLbl(bgA8), 'neutral')}
+      ${mkCard('AYLIK İŞE ALIM', g(bgA1), aylikLbl(bgA1), 'neutral')}
+      ${mkCard('AÇIK POZİSYON', g(bgA2), aylikLbl(bgA2), 'neutral')}
+      ${mkCard('GÖRÜŞME SAYISI', g(bgA3), aylikLbl(bgA3), 'neutral')}
       ${mkCard('TEKLİF KABUL', gPct(bgA5), '↑ Yüksek', 'up')}
       ${mkCard('RETENTION (3 AY)', gPct(bgA6), '↑ Mükemmel', 'up')}
       ${mkCard('TURNOVER RATE', gPct(bgA7), '↓ Düşük (iyi)', 'up')}
-      ${mkCard('ORT. KAPANMA', g(bgA4)+' gün', 'Mart 2026', 'neutral')}
+      ${mkCard('ORT. KAPANMA', g(bgA4)+' gün', aylikLbl(bgA4), 'neutral')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -1751,7 +1780,10 @@ function renderSEO(rows) {
   });
 }
 
-function renderDijital(rows) {
+function renderDijital(rows, selIdx) {
+  window.__rows = rows;
+  const wi = pickWeek(rows, selIdx, ['US-H1', 'US-H2', 'US-H3']);
+  window.updateDijital = function(){ renderDijital(window.__rows, parseInt(document.getElementById('dijital-week-select').value)); };
   const usH1 = findRow(rows,'US-H1');
   const usH2 = findRow(rows,'US-H2');
   const usH3 = findRow(rows,'US-H3');
@@ -1788,18 +1820,22 @@ function renderDijital(rows) {
     return n;
   }).filter(v=>v!==null) : [];
 
-  const lastH1 = usH1d.length ? usH1d[usH1d.length-1] : null;
-  const lastH2 = usH2d.length ? usH2d[usH2d.length-1] : null;
-  const lastH3 = usH3d.length ? usH3d[usH3d.length-1] : null;
-  const prevH2 = usH2d.length >= 2 ? usH2d[usH2d.length-2] : null;
+  const alH1 = usH1 ? usH1.slice(6).map(v => { const n = parseNum(v); return n===null||n<=0 ? null : n; }) : [];
+  const alH2 = usH2 ? usH2.slice(6).map(v => { const n = parseNum(v); return n===null||n<0||n>100 ? null : n; }) : [];
+  const alH3 = usH3 ? usH3.slice(6).map(v => { const n = parseNum(v); return n===null||n<=0||n>100 ? null : n; }) : [];
+  const lastH1 = alH1[wi] != null ? alH1[wi] : null;
+  const lastH2 = alH2[wi] != null ? alH2[wi] : null;
+  const lastH3 = alH3[wi] != null ? alH3[wi] : null;
+  const prevH2 = wi > 0 && alH2[wi-1] != null ? alH2[wi-1] : null;
 
   document.getElementById('dijital-content').innerHTML = `
+    ${mkWeekFilter('dijital','updateDijital',wi)}
 
     ${mkSection('Lead & Conversion — UMUT SEYARCI', '#6c63ff')}
     <div class="cards-grid">
-      ${mkCard('TOTAL LEAD', lastH1 ? lastH1.toLocaleString('tr') : '—', 'Son hafta', 'neutral')}
-      ${mkCard('CONVERSION RATE', lastH2 ? fmtPct(lastH2) : '—', prevH2 !== null ? (lastH2 > prevH2 ? '↑ Artış' : '↓ Düşüş') : '', prevH2 !== null ? (lastH2 > prevH2 ? 'up' : 'down') : 'neutral')}
-      ${mkCard('LEAD PER COUPLE', lastH3 ? lastH3.toFixed(2) : '—', 'Son hafta', 'neutral')}
+      ${mkCard('TOTAL LEAD', lastH1 ? lastH1.toLocaleString('tr') : '—', wLbl(wi), 'neutral')}
+      ${mkCard('CONVERSION RATE', lastH2 !== null ? fmtPct(lastH2) : '—', prevH2 !== null ? (lastH2 > prevH2 ? '↑ Artış' : '↓ Düşüş') : '', prevH2 !== null ? (lastH2 > prevH2 ? 'up' : 'down') : 'neutral')}
+      ${mkCard('LEAD PER COUPLE', lastH3 ? lastH3.toFixed(2) : '—', wLbl(wi), 'neutral')}
       ${mkCard('FİNALİZE PROJE', g(usA1), 'Aylık', 'neutral')}
       ${mkCard('BEKLENEN ETKİ', g(usA2), 'Aylık TL', 'neutral')}
     </div>
@@ -1822,7 +1858,7 @@ function renderDijital(rows) {
         <div style="text-align:center;padding:20px">
           <div style="font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:8px">AYLIK FİNALİZE PROJE</div>
           <div style="font-size:48px;font-weight:600;letter-spacing:-2px;color:var(--text)">${g(usA1)}</div>
-          <div style="font-size:12px;color:var(--muted);margin-top:6px">US-A1 · Mart 2026</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:6px">US-A1 · ${aylikLbl(usA1)}</div>
         </div>
       </div>
     </div>
@@ -1901,7 +1937,10 @@ function renderDijital(rows) {
   });
 }
 
-function renderPazarlama(rows) {
+function renderPazarlama(rows, selIdx) {
+  window.__rows = rows;
+  const wi = pickWeek(rows, selIdx, ['BY-H1', 'BY-H2', 'BY-H3', 'BY-H4', 'BY-H5']);
+  window.updatePazarlama = function(){ renderPazarlama(window.__rows, parseInt(document.getElementById('pazarlama-week-select').value)); };
   // BY-H — Haftalık (AYCAN veri girişi)
   const byH1 = findRow(rows,'BY-H1'); // Çekim/Edit
   const byH2 = findRow(rows,'BY-H2'); // Masaüstü Video/Edit
@@ -1932,14 +1971,15 @@ function renderPazarlama(rows) {
   const byH2d = byH2 ? getNumericValues(byH2).filter(v=>v>=0) : [];
 
   document.getElementById('pazarlama-content').innerHTML = `
+    ${mkWeekFilter('pazarlama','updatePazarlama',wi)}
 
     ${mkSection('Sosyal Medya — AYCAN ALPARSLAN', '#6c63ff')}
     <div class="cards-grid">
-      ${mkCard('B2C GÖNDERİ', g(byH3), 'Son hafta', 'neutral')}
-      ${mkCard('B2C STORY', g(byH4), 'Son hafta', 'neutral')}
-      ${mkCard('B2B GÖNDERİ', g(byH5), 'Son hafta', 'neutral')}
-      ${mkCard('ÇEKİM/EDİT', g(byH1), 'Son hafta', 'neutral')}
-      ${mkCard('MASAÜSTÜ VİDEO', g(byH2), 'Son hafta', 'neutral')}
+      ${mkCard('B2C GÖNDERİ', gw(byH3, wi), wLbl(wi), 'neutral')}
+      ${mkCard('B2C STORY', gw(byH4, wi), wLbl(wi), 'neutral')}
+      ${mkCard('B2B GÖNDERİ', gw(byH5, wi), wLbl(wi), 'neutral')}
+      ${mkCard('ÇEKİM/EDİT', gw(byH1, wi), wLbl(wi), 'neutral')}
+      ${mkCard('MASAÜSTÜ VİDEO', gw(byH2, wi), wLbl(wi), 'neutral')}
       ${mkCard('INSTAGRAM TRAFİK', g(byA12), 'Aylık', 'neutral')}
     </div>
     <div class="charts-grid">
@@ -2160,7 +2200,10 @@ function renderSatinalma(rows) {
   });
 }
 
-function renderB2B(rows) {
+function renderB2B(rows, selIdx) {
+  window.__rows = rows;
+  const wi = pickWeek(rows, selIdx, ['NB-H1', 'NB-H2', 'NB-H3', 'PÇ-H1', 'PÇ-H2', 'PÇ-H3', 'PÇ-H4', 'ZO-H1', 'ZO-H2', 'ZO-H3', 'ZO-H4', 'ZO-H5', 'ZO-H6']);
+  window.updateB2B = function(){ renderB2B(window.__rows, parseInt(document.getElementById('b2b-week-select').value)); };
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
   const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
 
@@ -2192,12 +2235,13 @@ function renderB2B(rows) {
   const zoH2d = zoH2 ? getNumericValues(zoH2).filter(v=>v>0) : [];
 
   document.getElementById('b2b-content').innerHTML = `
+    ${mkWeekFilter('b2b','updateB2B',wi)}
     ${mkSection('Özel Fiyat & Sponsorlu İçerik — PELDA ŞAHİN', '#6c63ff')}
     <div class="cards-grid">
-      ${mkCard('YENİ EKLENEN FİRMA', g(pcH1), 'Son hafta', 'neutral')}
-      ${mkCard('AKTİF ÖZEL FİYAT', g(pcH2), 'Son hafta', 'neutral')}
-      ${mkCard('YENİLEMESİ YAKIN', g(pcH3), 'Son hafta', 'neutral')}
-      ${mkCard('SPONSORLU İÇERİK', g(pcH4), 'Son hafta', 'neutral')}
+      ${mkCard('YENİ EKLENEN FİRMA', gw(pcH1, wi), wLbl(wi), 'neutral')}
+      ${mkCard('AKTİF ÖZEL FİYAT', gw(pcH2, wi), wLbl(wi), 'neutral')}
+      ${mkCard('YENİLEMESİ YAKIN', gw(pcH3, wi), wLbl(wi), 'neutral')}
+      ${mkCard('SPONSORLU İÇERİK', gw(pcH4, wi), wLbl(wi), 'neutral')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -2212,12 +2256,12 @@ function renderB2B(rows) {
 
     ${mkSection('Onboarding & İçerik — ZEREN ORMANCI', '#00d4aa')}
     <div class="cards-grid">
-      ${mkCard('ONBOARDING FİRMA', g(zoH1), 'Son hafta', 'neutral')}
-      ${mkCard('MEZUNİYET', g(zoH2), 'Son hafta', 'neutral')}
-      ${mkCard('FİRMA YAZISI', g(zoH3), 'Son hafta', 'neutral')}
-      ${mkCard('KAMPANYA', g(zoH4), 'Son hafta', 'neutral')}
-      ${mkCard('GALERİ DÜZENLENEN', g(zoH5), 'Son hafta', 'neutral')}
-      ${mkCard('YORUM TAMAMLANAN', g(zoH6), 'Son hafta', 'neutral')}
+      ${mkCard('ONBOARDING FİRMA', gw(zoH1, wi), wLbl(wi), 'neutral')}
+      ${mkCard('MEZUNİYET', gw(zoH2, wi), wLbl(wi), 'neutral')}
+      ${mkCard('FİRMA YAZISI', gw(zoH3, wi), wLbl(wi), 'neutral')}
+      ${mkCard('KAMPANYA', gw(zoH4, wi), wLbl(wi), 'neutral')}
+      ${mkCard('GALERİ DÜZENLENEN', gw(zoH5, wi), wLbl(wi), 'neutral')}
+      ${mkCard('YORUM TAMAMLANAN', gw(zoH6, wi), wLbl(wi), 'neutral')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -2241,13 +2285,13 @@ function renderB2B(rows) {
 
     ${mkSection('Provider Performans — NİDANUR BAŞOĞUL', '#ffa94d')}
     <div class="cards-grid">
-      ${mkCard('HAFTALIK YENİLENEN', g(nbH1), 'Son hafta', 'neutral')}
-      ${mkCard('HEALTH FLAG', g(nbH3), 'Son hafta', 'neutral')}
-      ${mkCard('AYLIK YENİLENEN', g(nbA2), 'Mart 2026', 'neutral')}
-      ${mkCard('AYLIK HEALTH FLAG', g(nbA3), 'Mart 2026', 'neutral')}
+      ${mkCard('HAFTALIK YENİLENEN', gw(nbH1, wi), wLbl(wi), 'neutral')}
+      ${mkCard('HEALTH FLAG', gw(nbH3, wi), wLbl(wi), 'neutral')}
+      ${mkCard('AYLIK YENİLENEN', g(nbA2), aylikLbl(nbA2), 'neutral')}
+      ${mkCard('AYLIK HEALTH FLAG', g(nbA3), aylikLbl(nbA3), 'neutral')}
     </div>
     <div class="table-card">
-      <div class="table-title">NB Aylık Özet — Mart 2026</div>
+      <div class="table-title">NB Aylık Özet — ${aylikLbl(nbA2)}</div>
       <table>
         <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>Değer</th></tr></thead>
         <tbody>
@@ -2295,7 +2339,10 @@ function renderB2B(rows) {
   }
 }
 
-function renderVeriYonetimi(rows) {
+function renderVeriYonetimi(rows, selIdx) {
+  window.__rows = rows;
+  const wi = pickWeek(rows, selIdx, ['GO-H1', 'GO-H2', 'GO-H3', 'GO-H4', 'GO-H5', 'GO-H6', 'GO-H7', 'TA-H1', 'TA-H2', 'TA-H3', 'TA-H4']);
+  window.updateVeri = function(){ renderVeriYonetimi(window.__rows, parseInt(document.getElementById('veriyonetimi-week-select').value)); };
   const g = r => { const v = getLastNonEmpty(r); return v !== null ? v.toLocaleString('tr') : '—'; };
   const glbl = arr => DYNAMIC_WEEKS.slice(0, arr.length);
 
@@ -2321,16 +2368,19 @@ function renderVeriYonetimi(rows) {
   const taH3d = taH3 ? getNumericValues(taH3).filter(v=>v>=0) : [];
   const taH4d = taH4 ? getNumericValues(taH4).filter(v=>v>=0) : [];
 
+  const taLen = Math.max(0, ...['TA-H1','TA-H2','TA-H3','TA-H4'].map(id=>{const r=findRow(rows,id);if(!r)return 0;const v=r.slice(6).map(x=>parseNum(x));let l=0;v.forEach((x,ii)=>{if(x!==null)l=ii+1;});return l;}));
+  const taCols = Array.from({length: Math.min(6, taLen)}, (_,ii)=>Math.max(0,taLen-Math.min(6,taLen))+ii);
   document.getElementById('veriyonetimi-content').innerHTML = `
+    ${mkWeekFilter('veriyonetimi','updateVeri',wi)}
     ${mkSection('Sellable & Masterlist — GÖZDE ÖKTEM', '#6c63ff')}
     <div class="cards-grid">
-      ${mkCard('CLEANSING', g(goH1), 'Son hafta', 'neutral')}
-      ${mkCard('CUSTOMER EKLEME', g(goH2), 'Son hafta', 'neutral')}
-      ${mkCard('REPETE KONTROL', g(goH3), 'Son hafta', 'neutral')}
-      ${mkCard('PROMO TANIMLAMA', g(goH4), 'Son hafta', 'neutral')}
-      ${mkCard('PROMO DÜZENLEME', g(goH5), 'Son hafta', 'neutral')}
-      ${mkCard('CRİSP MESAJ', g(goH6), 'Son hafta', 'neutral')}
-      ${mkCard('MERGE/DELETION', g(goH7), 'Son hafta', 'neutral')}
+      ${mkCard('CLEANSING', gw(goH1, wi), wLbl(wi), 'neutral')}
+      ${mkCard('CUSTOMER EKLEME', gw(goH2, wi), wLbl(wi), 'neutral')}
+      ${mkCard('REPETE KONTROL', gw(goH3, wi), wLbl(wi), 'neutral')}
+      ${mkCard('PROMO TANIMLAMA', gw(goH4, wi), wLbl(wi), 'neutral')}
+      ${mkCard('PROMO DÜZENLEME', gw(goH5, wi), wLbl(wi), 'neutral')}
+      ${mkCard('CRİSP MESAJ', gw(goH6, wi), wLbl(wi), 'neutral')}
+      ${mkCard('MERGE/DELETION', gw(goH7, wi), wLbl(wi), 'neutral')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -2355,10 +2405,10 @@ function renderVeriYonetimi(rows) {
 
     ${mkSection('Veri İşleme — TOLGA AYSAL', '#00d4aa')}
     <div class="cards-grid">
-      ${mkCard('FEEDBACK KONTROL', g(taH1), 'Son hafta', 'neutral')}
-      ${mkCard('DATA ADDING', g(taH2), 'Son hafta', 'neutral')}
-      ${mkCard('PROMO DESCRIPTION', g(taH3), 'Son hafta', 'neutral')}
-      ${mkCard('PROJE CLEANSING', g(taH4), 'Son hafta', 'neutral')}
+      ${mkCard('FEEDBACK KONTROL', gw(taH1, wi), wLbl(wi), 'neutral')}
+      ${mkCard('DATA ADDING', gw(taH2, wi), wLbl(wi), 'neutral')}
+      ${mkCard('PROMO DESCRIPTION', gw(taH3, wi), wLbl(wi), 'neutral')}
+      ${mkCard('PROJE CLEANSING', gw(taH4, wi), wLbl(wi), 'neutral')}
     </div>
     <div class="charts-grid">
       <div class="chart-card">
@@ -2373,11 +2423,11 @@ function renderVeriYonetimi(rows) {
     <div class="table-card">
       <div class="table-title">Tolga Aysal — Haftalık Özet</div>
       <table>
-        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th><th>2-8 Mar</th><th>9-15 Mar</th><th>16-22 Mar</th><th>23-29 Mar</th><th>30Mar-5Nis</th><th>6-12 Nis</th></tr></thead>
+        <thead><tr><th>Metrik ID</th><th>Metrik Adı</th>${taCols.map(i=>`<th>${DYNAMIC_WEEKS[i]||'—'}</th>`).join('')}</tr></thead>
         <tbody>
           ${[['TA-H1','Feedback Kontrol',taH1],['TA-H2','Data Adding',taH2],['TA-H3','Promo Description',taH3],['TA-H4','Proje Cleansing',taH4]].map(([id,name,r]) => {
-            const vals = r ? getNumericValues(r) : [];
-            return `<tr><td style="font-family:var(--mono);font-size:11px">${id}</td><td>${name}</td>${[0,1,2,3,4,5].map(i=>`<td>${vals[i]!==undefined&&vals[i]!==null?vals[i].toLocaleString('tr'):'—'}</td>`).join('')}</tr>`;
+            const vals = r ? r.slice(6).map(v=>parseNum(v)) : [];
+            return `<tr><td style="font-family:var(--mono);font-size:11px">${id}</td><td>${name}</td>${taCols.map(i=>`<td>${vals[i]!==undefined&&vals[i]!==null?vals[i].toLocaleString('tr'):'—'}</td>`).join('')}</tr>`;
           }).join('')}
         </tbody>
       </table>
@@ -2421,6 +2471,9 @@ async function loadData() {
       gunlukHeaderRow = data['GÜNLÜK'][0]; // İlk satır header
     }
 
+    if (!data._flat && data['HAFTALIK'] && data['HAFTALIK'].length > 0) HAFTALIK_HEADER = data['HAFTALIK'][0];
+    if (!data._flat && data['AYLIK'] && data['AYLIK'].length > 0) AYLIK_HEADER = data['AYLIK'][0];
+    getWeekLabels(rows);
     document.getElementById('last-update').textContent = 'Son güncelleme: ' + new Date().toLocaleTimeString('tr');
     renderGenel(rows);
     renderSatis(rows, gunlukHeaderRow);
